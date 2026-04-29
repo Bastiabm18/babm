@@ -46,7 +46,7 @@ export default function GridClient({ posts }: { posts: Post[] }) {
   return (
     <section 
       id="proyectos" 
-      className="w-screen min-h-screen flex flex-col items-center justify-center p-4 sm:p-8 bg-gray-100 dark:bg-gray-900"
+      className="w-screen min-h-screen flex flex-col items-center justify-center p-4 sm:p-8 bg-gray-100 dark:bg-background-dark"
     >
       <motion.div
         className="w-full max-w-[90vw] items-center justify-center p-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"

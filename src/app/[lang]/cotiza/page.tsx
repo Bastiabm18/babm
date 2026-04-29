@@ -12,7 +12,7 @@ export default function CotizaPage() {
     const { i18n } = useTranslation();
 
   return (
-    <main className="min-h-screen bg-primary-light dark:bg-gray-900 flex flex-col pb-10 items-center justify-center">
+    <main className="min-h-screen bg-primary-light dark:bg-background-dark flex flex-col pb-10 items-center justify-center">
 
       <motion.button 
         initial={{ opacity: 0, y: -20 }}

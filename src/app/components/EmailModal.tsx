@@ -32,7 +32,7 @@ export default function EmailModal({ onClose, texts }: EmailModalProps) {
         animate={{ scale: 1, opacity: 1, y: '-50%', x: '-50%' }}
         exit={{ scale: 0.9, opacity: 0 }}
         transition={{ type: 'spring', damping: 15, stiffness: 200 }}
-        className="fixed top-1/2 left-1/2 z-[1300] w-[90vw] max-w-md p-6 rounded-lg bg-background-light dark:bg-slate-800 shadow-xl"
+        className="fixed top-1/2 left-1/2 z-[1300] w-[90vw] max-w-md p-6 rounded-lg bg-background-light dark:bg-background-dark shadow-xl"
       >
         <button
           onClick={onClose}
@@ -46,18 +46,18 @@ export default function EmailModal({ onClose, texts }: EmailModalProps) {
           <input
             type="email"
             placeholder={texts.emailPlaceholder}
-            className="w-full p-2 rounded bg-slate-200 dark:bg-slate-700 text-text-light dark:text-text-dark border border-slate-300 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-primary-light"
+            className="w-full p-2 rounded bg-slate-200 dark:bg-background-dark text-text-light dark:text-text-dark border border-slate-300 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-primary-light"
           />
           <textarea
             placeholder={texts.messagePlaceholder}
             rows={4}
-            className="w-full p-2 rounded bg-slate-200 dark:bg-slate-700 text-text-light dark:text-text-dark border border-slate-300 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-primary-light"
+            className="w-full p-2 rounded bg-slate-200 dark:bg-background-dark text-text-light dark:text-text-dark border border-slate-300 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-primary-light"
           />
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             type="submit"
-            className="w-full py-2 px-4 rounded-lg bg-primary-light dark:bg-primary-dark text-white font-semibold hover:opacity-90 transition-opacity"
+            className="w-full py-2 px-4 rounded-lg bg-primary-light dark:bg-background-dark text-white font-semibold hover:opacity-90 transition-opacity"
           >
             {texts.sendButton}
           </motion.button>

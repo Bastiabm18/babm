@@ -279,14 +279,14 @@ export default function QuotationForm() {
 
   return (
     <>
-      <div className="w-full bg-primary-light dark:bg-gray-900 text-text-light dark:text-text-dark py-16 lg:py-24 px-4 sm:px-6">
+      <div className="w-full bg-primary-light dark:bg-background-dark text-text-light dark:text-text-dark py-16 lg:py-24 px-4 sm:px-6">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           className="max-w-4xl mx-auto"
         >
-          <div className="bg-gray-400 dark:bg-slate-800/50 p-8 rounded-xl shadow-2xl">
+          <div className="bg-gray-400 dark:bg-background-dark/50 p-8 rounded-xl shadow-2xl">
             <h1 className="text-3xl font-bold text-center mb-2 text-gray-700 dark:text-primary-dark">{texts.title}</h1>
             <p className="text-center text-slate-600 dark:text-slate-400 mb-8">{texts.personalInfo}</p>
             
@@ -309,7 +309,7 @@ export default function QuotationForm() {
                       onChange={handleInputChange}
                       placeholder={field.placeholder}
                       required={field.name !== 'rut'}
-                      className="w-full pl-10 pr-4 py-3 bg-slate-100 dark:bg-slate-700 border-2 border-transparent rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-light dark:focus:ring-primary-dark transition"
+                      className="w-full pl-10 pr-4 py-3 bg-slate-100 dark:bg-background-dark border-2 border-transparent rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-light dark:focus:ring-primary-dark transition"
                     />
                   </div>
                 ))}
@@ -346,7 +346,7 @@ export default function QuotationForm() {
                     type="submit"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className="py-2 px-6 bg-primary-light dark:bg-primary-dark text-white font-semibold rounded-lg hover:opacity-90 transition"
+                    className="py-2 px-6 bg-primary-light dark:bg-background-dark text-white font-semibold rounded-lg hover:opacity-90 transition"
                   >
                     {texts.confirmButton}
                   </motion.button>

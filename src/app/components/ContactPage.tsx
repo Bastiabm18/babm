@@ -112,7 +112,7 @@ export default function ContactPage() {
               animate={{ opacity: 1, x: 0 }} 
               transition={{ duration: 0.7, delay: 0.2 }}
             >
-              <div className="bg-white dark:bg-slate-800/50 p-6 rounded-lg shadow-lg">
+              <div className="bg-background-light_alt dark:bg-background-dark_alt p-6 rounded-lg shadow-lg">
                 <h2 className="text-2xl font-bold mb-4 text-primary-light dark:text-primary-dark">{texts.infoTitle}</h2>
                 <div className="space-y-4">
                   <div className="flex items-start gap-4">
@@ -146,7 +146,7 @@ export default function ContactPage() {
                 </div>
               </div>
 
-              <div className="mt-8 bg-white dark:bg-slate-800/50 p-6 rounded-lg shadow-lg">
+              <div className="mt-8 bg-white dark:bg-background-dark/50 p-6 rounded-lg shadow-lg">
                 <h2 className="text-2xl font-bold mb-4 text-primary-light dark:text-primary-dark">{texts.socialTitle}</h2>
                 <div className="flex justify-center sm:justify-start space-x-6">
                   {socialLinks.map((social, index) => (

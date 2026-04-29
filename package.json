@@ -10,6 +10,8 @@
     "@firebase/auth": "^1.10.8",
     "@firebase/firestore": "^4.8.0",
     "@firebase/storage": "^0.13.14",
+    "@supabase/ssr": "^0.10.2",
+    "@supabase/supabase-js": "^2.105.1",
     "firebase": "^9.23.0",
     "firebase-admin": "^13.4.0",
     "framer-motion": "12.10.5",

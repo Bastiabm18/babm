@@ -32,7 +32,7 @@ export default async function RootLayout({ children, params }: RootLayoutProps) 
 
   return (
     <html lang={params.lang} className="dark">
-      <body className={`${alfaSlabOne.className} ${bangers.className} ${inter.className} ${goldman.className} `}>
+      <body className={`${alfaSlabOne.className} ${bangers.className} ${inter.className} ${goldman.className} ${caveat.className} bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark transition-colors duration-500`}>
         <TranslationsProvider locale={params.lang} resources={resources}>
           <AuthProvider>
             {/* 2. Usa LayoutManager para que maneje la lógica de la UI */}

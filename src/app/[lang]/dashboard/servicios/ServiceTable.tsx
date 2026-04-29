@@ -45,11 +45,11 @@ export default function ServicesTable({ services, onEdit, onServiceDeleted }: Se
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2 }}
-        className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md overflow-x-auto"
+        className="bg-white dark:bg-background-dark p-6 rounded-lg shadow-md overflow-x-auto"
       >
         <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Lista de Servicios</h2>
         <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-          <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+          <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-background-dark dark:text-gray-400">
             <tr>
               <th scope="col" className="px-6 py-3">Nombre</th>
               <th scope="col" className="px-6 py-3">Precio</th>
@@ -60,7 +60,7 @@ export default function ServicesTable({ services, onEdit, onServiceDeleted }: Se
           </thead>
           <tbody>
             {services.map(service => (
-              <tr key={service.id} className="bg-white dark:bg-gray-800 border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+              <tr key={service.id} className="bg-white dark:bg-background-dark border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
                 <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">{service.nombre}</td>
                 <td className="px-6 py-4">${service.precio.toLocaleString('es-CL')}</td>
                 <td className="px-6 py-4">
@@ -94,7 +94,7 @@ export default function ServicesTable({ services, onEdit, onServiceDeleted }: Se
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: -20 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md"
+              className="bg-white dark:bg-background-dark rounded-lg shadow-xl p-6 w-full max-w-md"
             >
               <h3 className="text-lg font-bold text-gray-900 dark:text-white">Confirmar Eliminación</h3>
               <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">

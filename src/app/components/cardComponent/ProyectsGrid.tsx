@@ -71,7 +71,7 @@ export default function ProjectsGrid() {
   // Muestra un spinner mientras los datos están cargando
   if (loading) {
     return (
-      <section className="w-screen min-h-screen flex justify-center items-center bg-gray-100 dark:bg-gray-900">
+      <section className="w-screen min-h-screen flex justify-center items-center bg-gray-100 dark:bg-background-dark">
         <FaSpinner className="animate-spin text-4xl text-primary-dark dark:text-primary-light" />
       </section>
     );
@@ -85,7 +85,7 @@ export default function ProjectsGrid() {
   return (
     <section 
       id="proyectos" 
-      className="w-screen min-h-screen flex flex-col items-center justify-center p-4 sm:p-8 bg-gray-100 dark:bg-gray-900"
+      className="w-screen min-h-screen flex flex-col items-center justify-center p-4 sm:p-8 bg-background-light dark:bg-background-dark"
     >
       {/* Grid de Proyectos */}
       <motion.div
@@ -134,7 +134,7 @@ export default function ProjectsGrid() {
               </motion.div>
             </div>
             <motion.span
-              className="ml-4 pr-2 z-10 text-3xl text-primary-light dark:text-gray-300 cursor-pointer"
+              className="ml-4 pr-2 z-10 text-3xl text-primary-light_alt dark:text-primary-dark cursor-pointer"
               variants={{
                 rest: { x: 0 },
                 hover: { x: [-3, 3, -3, 3, 0] }

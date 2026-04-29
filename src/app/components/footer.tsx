@@ -119,7 +119,7 @@ export function Footer() {
   const [isHovered, setIsHovered] = useState(false);
 
   return (
-    <footer className="bg-primary-light/90 dark:bg-slate-800 text-text-dark/80">
+    <footer className="bg-primary-light/90 dark:bg-background-dark text-text-dark/80">
       <div className="max-w-[95vw]  mx-auto px-4 sm:px-6 py-12">
         {/* Contenedor principal en Grid de 4 columnas para desktop, 1 para móvil */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">

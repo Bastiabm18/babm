@@ -107,13 +107,13 @@ export const PromoModal = () => {
             onClick={(e) => e.stopPropagation()}
           >
             {/* AQUÍ ESTÁ LA CORRECCIÓN: Se añadió "overflow-hidden" */}
-            <div className="relative rounded-md overflow-hidden shadow-2xl shadow-black/50 bg-background-light dark:bg-slate-800">
+            <div className="relative rounded-md overflow-hidden shadow-2xl shadow-black/50 bg-background-light dark:bg-background-dark">
               
               <div
                 className="
                   absolute top-8 z-20 -left-12 transform -rotate-45 
                   w-48 py-1 text-center font-bold text-white
-                  bg-primary-light dark:bg-primary-dark shadow-lg
+                  bg-primary-light dark:bg-background-dark shadow-lg
                 "
               >
                 <h2 className="text-2xl" style={{ textShadow: '1px 1px 3px rgba(0,0,0,0.5)' }}>

@@ -53,7 +53,7 @@ export const Sponsors = () => {
 
   return (
     <motion.section
-      className="w-full bg-primary-light dark:bg-gray-900 text-text-light dark:text-text-dark py-12 px-4 flex flex-col items-center justify-center"
+      className="w-full bg-primary-light dark:bg-background-dark text-text-light dark:text-text-dark py-12 px-4 flex flex-col items-center justify-center"
       initial="hidden"
       whileInView="visible"
       viewport={{ once: true, margin: "-100px" }}

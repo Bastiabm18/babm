@@ -1,11 +1,9 @@
-// context/AuthContext.tsx
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { onAuthStateChanged, User, Auth } from 'firebase/auth';
-import { getFirebaseAuth } from '@/lib/firebase/firebaseConfig';
+import { User } from '@supabase/supabase-js'; // Cambiamos el tipo de User de Firebase al de Supabase
+import { getSupabaseBrowser } from '@/lib/supabase/supabase-client'; // Importamos Supabase
 import Spinner from '@/app/components/Spinner';
-import { useTranslation } from 'react-i18next';
 
 // Define la interfaz para el valor del contexto
 interface AuthContextType {
@@ -18,51 +16,29 @@ const AuthContext = createContext<AuthContextType>({ user: null, loading: true }
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const { i18n } = useTranslation();
+  
+  const supabase = getSupabaseBrowser();
 
   useEffect(() => {
-    const auth = getFirebaseAuth();
-    
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser);
+    // 1. Obtener la sesión actual al cargar
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
       setLoading(false);
-
-      const lang = i18n.language;
-
-      // ✅ FIX: Nos aseguramos de que 'lang' no sea undefined antes de llamar a la API.
-      if (!lang || lang === 'undefined') {
-        console.log("AuthContext: Esperando a que se determine el idioma.");
-        return; // No hacemos nada si el idioma aún no está listo.
-      }
-
-      if (currentUser) {
-        try {
-          const token = await currentUser.getIdToken();
-          await fetch(`/${lang}/api/auth/session`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token }),
-          });
-        } catch (error) {
-          console.error('Error creating server session:', error);
-        }
-      } else {
-        try {
-          await fetch(`/${lang}/api/auth/session`, {
-            method: 'DELETE',
-          });
-        } catch (error) {
-          console.error('Error deleting server session:', error);
-        }
-      }
     });
 
-    return () => unsubscribe();
-  }, [i18n.language, user]); // Se añade 'user' a las dependencias para re-evaluar si cambia
+    // 2. Escuchar cambios de estado (Login, Logout)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    // Limpiar suscripción
+    return () => subscription.unsubscribe();
+  }, [supabase]);
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-screen bg-gray-900">
+      <div className="flex justify-center items-center h-screen bg-black">
         <Spinner />
       </div>
     );

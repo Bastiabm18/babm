@@ -76,7 +76,7 @@ const AboutUs = () => {
   };
 
   return (
-    <section className="w-full py-20 px-4 sm:px-8 bg-primary-light/90 dark:bg-gray-900">
+    <section className="w-full py-20 px-4 sm:px-8 bg-primary-light/90 dark:bg-background-dark">
       <div className="max-w-[90vw] mx-auto">
         <motion.h2
           className="text-4xl sm:text-5xl font-bold text-center text-gray-200 dark:text-gray-300 mb-12"

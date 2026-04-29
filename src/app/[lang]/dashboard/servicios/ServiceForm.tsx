@@ -44,7 +44,7 @@ export default function ServiceForm({ editingService, onCancelEdit, onServiceSav
     <motion.div 
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md"
+      className="bg-white dark:bg-background-dark p-6 rounded-lg shadow-md"
     >
       <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">
         {editingService ? 'Editar Servicio' : 'Crear Nuevo Servicio'}
@@ -54,17 +54,17 @@ export default function ServiceForm({ editingService, onCancelEdit, onServiceSav
         
         <div>
           <label htmlFor="nombre" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Nombre del Servicio</label>
-          <input type="text" name="nombre" id="nombre" defaultValue={editingService?.nombre} required className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-dark focus:border-primary-dark"/>
+          <input type="text" name="nombre" id="nombre" defaultValue={editingService?.nombre} required className="mt-1 block w-full px-3 py-2 bg-white dark:bg-background-dark border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-dark focus:border-primary-dark"/>
         </div>
 
         <div>
           <label htmlFor="descripcion" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Descripción</label>
-          <textarea name="descripcion" id="descripcion" rows={3} defaultValue={editingService?.descripcion} required className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-dark focus:border-primary-dark"></textarea>
+          <textarea name="descripcion" id="descripcion" rows={3} defaultValue={editingService?.descripcion} required className="mt-1 block w-full px-3 py-2 bg-white dark:bg-background-dark border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-dark focus:border-primary-dark"></textarea>
         </div>
 
         <div>
           <label htmlFor="precio" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Precio</label>
-          <input type="number" name="precio" id="precio" defaultValue={editingService?.precio} required min="0" step="0.01" className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-dark focus:border-primary-dark"/>
+          <input type="number" name="precio" id="precio" defaultValue={editingService?.precio} required min="0" step="0.01" className="mt-1 block w-full px-3 py-2 bg-white dark:bg-background-dark border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-dark focus:border-primary-dark"/>
         </div>
         
         <div className="flex items-center">

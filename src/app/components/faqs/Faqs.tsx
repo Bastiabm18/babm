@@ -52,7 +52,7 @@ export default function Faqs() {
 
   if (loading) {
     return (
-      <section className="w-full py-20 flex justify-center items-center bg-primary-light/90 dark:bg-gray-900">
+      <section className="w-full py-20 flex justify-center items-center bg-primary-light/90 dark:bg-background-dark">
         <FaSpinner className="animate-spin text-4xl text-primary-dark dark:text-primary-light" />
       </section>
     );
@@ -63,7 +63,7 @@ export default function Faqs() {
   }
 
   return (
-    <section className="w-full py-20 px-4 sm:px-8 bg-primary-light/90 dark:bg-gray-900">
+    <section className="w-full py-20 px-4 sm:px-8 bg-primary-light/90 dark:bg-background-dark">
       <div className="max-w-4xl mx-auto">
         <motion.h2
           initial={{ opacity: 0, y: -20 }}
@@ -84,7 +84,7 @@ export default function Faqs() {
                 whileInView={{ opacity: 1 }}
                 viewport={{ once: true, margin: "-50px" }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden"
+                className="bg-background-light_alt dark:bg-background-dark_alt rounded-lg shadow-md overflow-hidden"
               >
                 <button
                   onClick={() => handleToggle(index)}
@@ -93,7 +93,7 @@ export default function Faqs() {
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                     {faq.pregunta[lang] || faq.pregunta.es}
                   </h3>
-                  <div className="text-primary-dark dark:text-primary-light text-xl flex-shrink-0">
+                  <div className="text-primary-light dark:text-primary-dark text-xl flex-shrink-0">
                     <AnimatePresence initial={false} mode="wait">
                       <motion.div
                         key={isOpen ? 'minus' : 'plus'}

@@ -35,7 +35,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ onClose, onConfir
       onClick={onClose}
     >
       <motion.div
-        className="bg-white dark:bg-slate-800 rounded-xl p-6 sm:p-8 max-w-md w-full text-center shadow-xl"
+        className="bg-white dark:bg-background-dark rounded-xl p-6 sm:p-8 max-w-md w-full text-center shadow-xl"
         variants={modalVariants}
         onClick={(e) => e.stopPropagation()} // Evita que el click se propague al fondo
       >
@@ -57,7 +57,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ onClose, onConfir
             onClick={onConfirm}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="py-2 px-6 bg-primary-light dark:bg-primary-dark text-white font-semibold rounded-lg hover:opacity-90 transition"
+            className="py-2 px-6 bg-primary-light dark:bg-background-dark text-white font-semibold rounded-lg hover:opacity-90 transition"
           >
             {texts.confirmButton}
           </motion.button>

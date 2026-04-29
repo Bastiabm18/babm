@@ -30,15 +30,15 @@ interface SidebarProps {
 // Lista completa de todos los items posibles del menú
 const allMenuItems: MenuItem[] = [
   // Items para todos los usuarios
-  { name: 'Inicio', path: '/dashboard', icon: <FaHome />, role: ['user', 'user'] },
-  { name: 'Mi Perfil', path: '/dashboard/profile', icon: <FaUserCircle />, role: ['user', 'user'] },
-  { name:'Publicaciones', path:'/dashboard/publicacion',icon:<MdOutlinePostAdd/>,role:['user']}, 
-  {name:'Servicios', path:'/dashboard/servicios', icon:<RiCustomerService2Fill/>, role:['user']},
-  { name: 'Opiniones', path: '/dashboard/opiniones', icon: <FaComment />, role: ['user'] },
-  { name: 'Promociones', path: '/dashboard/promos', icon: <FaChartBar />, role: ['user'] },
-  { name: 'Faq', path: '/dashboard/faq', icon: <FaQuestion />, role: ['user'] },
-  { name: 'Configuración ', path: '/dashboard/config', icon: <AiFillSetting/>, role: ['user'] },
-  { name: 'Salir', path: '/', icon: <BsBackspace />, role: ['user'] },
+  { name: 'Inicio', path: '/dashboard', icon: <FaHome />, role: ['user', 'admin'] },
+  { name: 'Mi Perfil', path: '/dashboard/profile', icon: <FaUserCircle />, role: ['user', 'admin'] },
+  { name:'Publicaciones', path:'/dashboard/publicacion',icon:<MdOutlinePostAdd/>,role:['user', 'admin']}, 
+  {name:'Servicios', path:'/dashboard/servicios', icon:<RiCustomerService2Fill/>, role:['user', 'admin']},
+  { name: 'Opiniones', path: '/dashboard/opiniones', icon: <FaComment />, role: ['user', 'admin'] },
+  { name: 'Promociones', path: '/dashboard/promos', icon: <FaChartBar />, role: ['user', 'admin'] },
+  { name: 'Faq', path: '/dashboard/faq', icon: <FaQuestion />, role: ['user', 'admin'] },
+  { name: 'Configuración ', path: '/dashboard/config', icon: <AiFillSetting/>, role: ['user', 'admin'] },
+  { name: 'Salir', path: '/', icon: <BsBackspace />, role: ['user', 'admin'] },
 ];
 
 export default function DashboardSidebar({ collapsed, onToggle, mobileOpen, setMobileOpen, userRole, lang }: SidebarProps) {
@@ -52,7 +52,7 @@ export default function DashboardSidebar({ collapsed, onToggle, mobileOpen, setM
   return (
     <>
       <aside
-        className={`fixed top-0 left-0 h-full bg-white dark:bg-gray-800 shadow-xl z-40 transition-all duration-300 ease-in-out
+        className={`fixed top-0 left-0 h-full bg-primary-light dark:bg-background-dark shadow-xl z-40 transition-all duration-300 ease-in-out
           ${collapsed ? 'w-20' : 'w-64'}
           ${mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         `}
@@ -78,7 +78,7 @@ export default function DashboardSidebar({ collapsed, onToggle, mobileOpen, setM
                   <Link
                     href={`/${lang}${item.path}`}
                     className={`flex items-center p-3 rounded-lg transition-colors
-                      ${pathname === `/${lang}${item.path}` ? 'bg-primary-light/20 text-primary-dark dark:bg-primary-dark/30 dark:text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}
+                      ${pathname === `/${lang}${item.path}` ? 'bg-primary-light/20 text-primary-dark dark:bg-background-dark/30 dark:text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-primary-light/20 dark:hover:bg-primary-dark/30'}
                       ${collapsed ? 'justify-center' : ''}
                     `}
                     onClick={() => setMobileOpen(false)}

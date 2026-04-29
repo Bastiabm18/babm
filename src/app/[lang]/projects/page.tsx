@@ -38,8 +38,8 @@ function ProjectDetailView({ post }: { post: Post }) {
           transition={{ duration: 0.6, ease: "easeOut" }}
           className="lg:col-span-2 flex flex-col pt-8"
         >
-          <h1 className="text-4xl sm:text-5xl font-bold text-gray-800 dark:text-white leading-tight">{post.titulo}</h1>
-          <p className="mt-4 text-xl font-semibold text-teal-700 dark:text-lime-400">{post.subtitulo}</p>
+          <h1 className="text-4xl sm:text-5xl font-bold text-dark-800 dark:text-white leading-tight">{post.titulo}</h1>
+          <p className="mt-4 text-xl font-semibold text-primary-light dark:text-primary-dark">{post.subtitulo}</p>
           <div className="mt-8 text-gray-600 dark:text-gray-300 text-base leading-relaxed whitespace-pre-wrap">{post.descripcion}</div>
         </motion.div>
 
@@ -65,13 +65,13 @@ function ProjectDetailView({ post }: { post: Post }) {
                   target='_blank'
                   title='DESCARGAR IMAGEN'
                   
-                  className="absolute top-4 right-4 z-10 px-4 py-4 bg-secondary-dark bg-opacity-50  text-white font-semibold rounded-full animate-pulse hover:bg-secondary-dark/90 transition shadow-lg"
+                  className="absolute top-4 right-4 z-10 px-4 py-4 bg-primary-light dark:bg-primary-dark  text-white font-semibold rounded-full animate-pulse hover:bg-secondary-dark/90 transition shadow-lg"
                 >
                   <FaDownload />
                 </a>
                 </>
               ) : (
-                <div className="w-full h-full bg-gray-200 dark:bg-gray-800 flex items-center justify-center">
+                <div className="w-full h-full bg-gray-200 dark:bg-background-dark flex items-center justify-center">
                   <p className="text-gray-500">No hay imágenes disponibles</p>
                 </div>
               )}
@@ -151,7 +151,7 @@ function ProjectsGridView({ allPosts }: { allPosts: Post[] }) {
             placeholder="Buscar por título..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-700 focus:border-secondary-dark dark:focus:border-secondary-dark focus:ring-0 rounded-lg py-3 pl-12 pr-4 transition"
+            className="w-full bg-background-light dark:bg-background-dark border-2 border-gray-300 dark:border-gray-700 focus:border-secondary-dark dark:focus:border-secondary-dark focus:ring-0 rounded-lg py-3 pl-12 pr-4 transition"
           />
         </div>
 
@@ -167,18 +167,18 @@ function ProjectsGridView({ allPosts }: { allPosts: Post[] }) {
                 exit={{ opacity: 0, scale: 0.9 }}
                 transition={{ duration: 0.3 }}
                 onClick={() => router.push(`/${i18n.language}/projects?id=${post.id}`)}
-                className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden cursor-pointer transform hover:-translate-y-1 transition-transform duration-300"
+                className="bg-background-light dark:bg-background-dark_alt rounded-lg shadow-md overflow-hidden cursor-pointer transform hover:-translate-y-1 transition-transform duration-300"
               >
                 <div className="relative w-full h-56">
                   {post.imagenes.length > 0 ? (
                     <Image src={post.imagenes[0].url} alt={post.titulo} fill className="object-cover" />
                   ) : (
-                    <div className="w-full h-full bg-gray-200 dark:bg-gray-700"></div>
+                    <div className="w-full h-full bg-gray-200 dark:bg-background-dark"></div>
                   )}
                 </div>
                 <div className="p-6">
                   <h3 className="text-xl font-bold text-gray-900 dark:text-white">{post.titulo}</h3>
-                  <p className="text-teal-700 dark:text-lime-400 mt-1">{post.subtitulo}</p>
+                  <p className="text-primary_alt dark:text-primary-dark mt-1">{post.subtitulo}</p>
                 </div>
               </motion.div>
             ))}
@@ -235,7 +235,7 @@ function ProjectPageContent() {
 
   if (loading) {
     return (
-      <div className="w-full min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
+      <div className="w-full min-h-screen flex items-center justify-center bg-primary-light dark:bg-background-dark">
         <FaSpinner className="text-4xl animate-spin text-secondary-dark" />
       </div>
     );
@@ -243,7 +243,7 @@ function ProjectPageContent() {
 
   if (error) {
      return (
-      <div className="w-full min-h-screen flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-900">
+      <div className="w-full min-h-screen flex flex-col items-center justify-center bg-primary-light dark:bg-background-dark">
         <p className="text-xl text-gray-700 dark:text-gray-300">Post no encontrado o ID inválido.</p>
         <button onClick={() => window.location.href=`${i18n.language}/projects?id=`} className="mt-4 flex items-center gap-2 px-4 py-2 bg-secondary-dark text-white rounded-md hover:bg-opacity-80">
           <FaArrowLeft /> Volver
@@ -254,7 +254,7 @@ function ProjectPageContent() {
 
   // Decide qué vista renderizar
   return (
-    <main className="w-full min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 p-4 sm:p-8">
+    <main className="w-full min-h-screen bg-primary-light dark:bg-background-dark text-gray-900 dark:text-gray-100 p-4 sm:p-8">
       <div className="max-w-7xl mx-auto">
         <AnimatePresence mode="wait">
           {postId && post ? (
@@ -277,7 +277,7 @@ function ProjectPageContent() {
 export default function ProjectPage() {
     return (
         <Suspense fallback={
-            <div className="w-full min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
+            <div className="w-full min-h-screen flex items-center justify-center bg-primary-light dark:bg-background-dark">
                 <FaSpinner className="text-4xl animate-spin text-secondary-dark" />
             </div>
         }>

@@ -23,7 +23,7 @@ const ServiceCard: React.FC<ServiceCardProps> = ({ serviceName, servicePrice, is
     // ESTADO SELECCIONADO: Como lo pediste
     ? 'bg-gray-600 dark:bg-gray-400 border-transparent shadow-lg' 
     // ESTADO NORMAL: Sin cambios
-    : 'bg-slate-50/50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-500'; 
+    : 'bg-slate-50/50 dark:bg-background-dark border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-500'; 
 
   return (
     <motion.div

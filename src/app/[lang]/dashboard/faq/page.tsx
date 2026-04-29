@@ -2,7 +2,6 @@
 import React from 'react';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { getAdminInstances } from '@/lib/firebase/firebase-admin';
 import DashboardLayout from '@/app/components/DashboardLayout';
 import { getFaqs } from './actions';
 import FaqManager from './FaqManager';
@@ -14,25 +13,44 @@ interface FaqPageProps {
 }
 
 async function FaqPage({ params }: FaqPageProps) {
-  const cookieStore = cookies();
-  const sessionCookie = cookieStore.get('firebaseAuthSession')?.value;
+  const cookieStore = await cookies();
+  const sessionCookie = cookieStore.get('supabaseAuthSession')?.value;
 
   if (!sessionCookie) {
     redirect(`/${params.lang}/login`);
   }
 
-  let decodedToken;
+  let userData: any = null;
+
   try {
-    const { auth: adminAuth } = getAdminInstances();
-    decodedToken = await adminAuth.verifySessionCookie(sessionCookie, true);
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ;
+    
+    const res = await fetch(`${baseUrl}/api/auth/session`, {
+      method: 'GET',
+      cache: 'no-store',
+      headers: {
+        Cookie: `supabaseAuthSession=${sessionCookie}`
+      }
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      userData = data.user;
+    } else {
+      redirect(`/${params.lang}/login`);
+    }
   } catch (error) {
-    console.error('[FaqPage] Session verification failed:', error);
+    console.error('[FaqPage] Error obteniendo sesión:', error);
     redirect(`/${params.lang}/login`);
   }
 
-  const userRole = decodedToken.role || 'user';
+  if (!userData) {
+    redirect(`/${params.lang}/login`);
+  }
+
+  const userRole = userData.role || 'user';
   
-  if (userRole !== 'user') {
+  if (userRole !== 'admin') {
       redirect(`/${params.lang}/dashboard`);
   }
 
@@ -40,8 +58,8 @@ async function FaqPage({ params }: FaqPageProps) {
 
   return (
     <DashboardLayout
-      userEmail={decodedToken.email}
-      userName={decodedToken.name}
+      userEmail={userData.email}
+      userName={userData.name}
       userRole={userRole}
       lang={params.lang}
     >

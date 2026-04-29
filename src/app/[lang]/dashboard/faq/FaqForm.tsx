@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect, useRef, FormEvent } from 'react';
-import { Faq, createOrUpdateFaq } from '@/app/[lang]/dashboard/faq/actions';
+import {  createOrUpdateFaq } from '@/app/[lang]/dashboard/faq/actions';
 import { FaSpinner } from 'react-icons/fa';
 import { motion } from 'framer-motion';
+import { Faq } from '@/types/admin';
 
 interface FaqFormProps {
   editingFaq: Faq | null;
@@ -25,7 +26,6 @@ export default function FaqForm({ editingFaq, onCancelEdit, onFaqSaved }: FaqFor
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
-    // This effect handles resetting the form when the editing state is cancelled
     if (!editingFaq) {
       formRef.current?.reset();
     }
@@ -44,7 +44,6 @@ export default function FaqForm({ editingFaq, onCancelEdit, onFaqSaved }: FaqFor
       if (editingFaq) {
         onCancelEdit();
       } else {
-        // ✅ FIX: Resets the form fields after creating a new FAQ
         formRef.current?.reset();
       }
     }
@@ -57,7 +56,7 @@ export default function FaqForm({ editingFaq, onCancelEdit, onFaqSaved }: FaqFor
     <motion.div 
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md"
+      className="bg-white dark:bg-background-dark p-6 rounded-lg shadow-md"
     >
       <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">
         {editingFaq ? 'Editar Pregunta Frecuente' : 'Crear Nueva Pregunta'}
@@ -89,11 +88,11 @@ export default function FaqForm({ editingFaq, onCancelEdit, onFaqSaved }: FaqFor
             <div className="space-y-4">
               <div>
                 <label htmlFor={`pregunta_${lang.code}`} className="block text-sm font-medium text-gray-700 dark:text-gray-300">Pregunta ({lang.name})</label>
-                <textarea name={`pregunta_${lang.code}`} id={`pregunta_${lang.code}`} rows={2} defaultValue={editingFaq?.pregunta[lang.code as keyof typeof editingFaq.pregunta]} required className="mt-1 block w-full max-w-xl px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm"/>
+                <textarea name={`pregunta_${lang.code}`} id={`pregunta_${lang.code}`} rows={2} defaultValue={editingFaq?.pregunta[lang.code as keyof typeof editingFaq.pregunta]} required className="mt-1 block w-full max-w-xl px-3 py-2 bg-white dark:bg-background-dark border border-gray-300 dark:border-gray-600 rounded-md shadow-sm"/>
               </div>
               <div>
                 <label htmlFor={`respuesta_${lang.code}`} className="block text-sm font-medium text-gray-700 dark:text-gray-300">Respuesta ({lang.name})</label>
-                <textarea name={`respuesta_${lang.code}`} id={`respuesta_${lang.code}`} rows={5} defaultValue={editingFaq?.respuesta[lang.code as keyof typeof editingFaq.respuesta]} required className="mt-1 block w-full max-w-xl px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm"></textarea>
+                <textarea name={`respuesta_${lang.code}`} id={`respuesta_${lang.code}`} rows={5} defaultValue={editingFaq?.respuesta[lang.code as keyof typeof editingFaq.respuesta]} required className="mt-1 block w-full max-w-xl px-3 py-2 bg-white dark:bg-background-dark border border-gray-300 dark:border-gray-600 rounded-md shadow-sm"></textarea>
               </div>
             </div>
           </div>

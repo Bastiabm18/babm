@@ -8,16 +8,16 @@ const NeonSign = () => {
   // La sintaxis es: [desplazamiento-x] [desplazamiento-y] [desenfoque] [color]
   // Combinamos un resplandor interior blanco y uno exterior amarillo para un efecto más realista.
   const neonEffect = {
-    color: '#D8B4FE', // Color del texto base (blanco para que el brillo destaque)
-    textShadow: `
-      0 0 7px #9127F5,
+    color: '#FFFFFF', // Color del texto base (blanco para que el brillo destaque)
+ textShadow: `
+      0 0 7px #9a3412,
       0 0 10px #fff,
-      0 0 21px #9127F5,
-      0 0 42px #8B49C9,
-      0 0 82px #D39154,
-      0 0 92px #662B9E,
-      0 0 102px #762ABD,
-      0 0 151px #9127F5
+      0 0 21px #9a3412,
+      0 0 42px #9a3412,
+      0 0 82px #9a3412,
+      0 0 92px #9a3412,
+      0 0 102px #9a3412,
+      0 0 151px #9a3412
     `,
   };
 
@@ -37,7 +37,7 @@ const NeonSign = () => {
         ease: 'easeInOut',     // Suaviza el cambio entre opacidades
       }}
     >
-      <a href='/' className="bg-cover font-extrabold text-2xl md:text-3xl tracking-wider font-caveat bg-clip-text">
+      <a href='/' className="bg-cover font-extrabold text-2xl md:text-3xl tracking-wider bg-clip-text">
         Babm.cl
       </a>
     </motion.div>

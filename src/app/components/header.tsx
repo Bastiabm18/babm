@@ -99,7 +99,7 @@ export function Header() {
       </button>
 
       {isLangDropdownOpen && (
-        <div className="absolute top-full right-0 mt-2 w-40 bg-gray-700/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-md shadow-lg py-1">
+        <div className="absolute top-full right-0 mt-2 w-40 bg-gray-700/90 dark:bg-background-dark/90 backdrop-blur-sm rounded-md shadow-lg py-1">
           {languages.map((lang) => (
             <button
               key={lang.code}
@@ -128,7 +128,7 @@ export function Header() {
         )}
       </button>
       {isUserMenuOpen && (
-        <div className="absolute top-full right-0 mt-2 w-48 bg-gray-700/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-md shadow-lg py-1">
+        <div className="absolute top-full right-0 mt-2 w-48 bg-gray-700/90 dark:bg-background-dark/90 backdrop-blur-sm rounded-md shadow-lg py-1">
           <Link href={`/${i18n.language}/dashboard`} className="block w-full text-left px-4 py-2 text-sm hover:bg-white/10" onClick={() => setIsUserMenuOpen(false)}>
             Dashboard
           </Link>
@@ -145,7 +145,7 @@ export function Header() {
       initial={{ y: -100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
-      className=" sticky left-0 top-0 z-20 bg-primary-light dark:bg-primary-dark text-white shadow-md backdrop-blur-sm bg-opacity-80"
+      className=" sticky left-0 top-0 z-20 bg-primary-light dark:bg-background-dark text-white shadow-md backdrop-blur-sm bg-opacity-80"
     >
       <nav className="container w-full mx-auto flex justify-between items-center px-4 py-3">
         <div className="flex flex-row items-center space-x-4">

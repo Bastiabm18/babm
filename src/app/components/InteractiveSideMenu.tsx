@@ -118,7 +118,7 @@ const HoverMenuItem: FC<{
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         onClick={onLinkClick}
-        className="relative flex items-center no-underline transition-all duration-300 rounded-full px-6 py-1 bg-primary-light/90 dark:bg-gray-200/30 text-gray-200 dark:text-white hover:!text-gray-300 dark:hover:!text-teal-300 hover:bg-gray-900/60 dark:hover:bg-gray-200/50"
+        className="relative flex items-center no-underline transition-all duration-300 rounded-full px-6 py-1 border border-primary-light_alt bg-primary-light_alt/50 dark:bg-primary-dark_alt text-gray-200 dark:text-white hover:!text-gray-300 dark:hover:!text-primary-dark hover:bg-gray-900/60 dark:hover:bg-background-dark_alt/60"
         style={{ transform: `translateX(${radius}rem) rotate(${-angle}deg)` }}
         title={item.name}
       >
@@ -143,7 +143,7 @@ const HoverMenuItem: FC<{
           {isHovered && <HoverSparks isDark={isDark} />}
         </AnimatePresence>
 
-        <div className="relative flex items-center justify-center w-12 h-12 bg-gray-300/50 dark:bg-gray-700/50 rounded-full shadow-md" style={{ overflow: 'visible' }}>
+        <div className="relative flex items-center justify-center w-12 h-12 bg-primary-light dark:bg-background-dark/50 rounded-full shadow-md" style={{ overflow: 'visible' }}>
           {item.icon}
           <AnimatePresence>
             {isOpen && <MenuItemSparks isDark={isDark} />}
@@ -270,7 +270,7 @@ const InteractiveSideMenu: FC = () => {
             </AnimatePresence>
             
             <motion.button
-              className="w-16 h-16 rounded-full font-goldman flex items-center justify-center focus:outline-none bg-secondary-light/50 dark:bg-primary-dark/80 text-white shadow-lg my-2"
+              className="w-16 h-16 rounded-full font-goldman flex items-center justify-center focus:outline-none bg-secondary-light/50 dark:bg-background-dark/80 text-white shadow-lg my-2"
               onClick={() => setIsOpen(!isOpen)}
               animate={{ rotate: isOpen ? -45 : 0 }}
               whileHover={{ scale: 1.1 }}
@@ -286,9 +286,9 @@ const InteractiveSideMenu: FC = () => {
                     <FaChevronDown className={`w-3 h-3 transition-transform ${isLangDropdownOpen ? 'rotate-180' : ''}`} />
                   </button>
                   {isLangDropdownOpen && (
-                    <div className="absolute left-full bottom-0 ml-3 w-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-md shadow-lg py-1 z-20">
+                    <div className="absolute left-full bottom-0 ml-3 w-40 bg-white/80 dark:bg-background-dark/80 backdrop-blur-sm rounded-md shadow-lg py-1 z-20">
                       {languages.map((lang) => (
-                        <button key={lang.code} onClick={() => changeLanguage(lang.code)} className="w-full flex items-center px-4 py-2 text-sm text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700">
+                        <button key={lang.code} onClick={() => changeLanguage(lang.code)} className="w-full flex items-center px-4 py-2 text-sm text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-background-dark_alt/70 transition-colors">
                           <span className="mr-3 text-lg">{lang.flag}</span>
                           <span>{lang.name}</span>
                         </button>
@@ -316,7 +316,7 @@ const InteractiveSideMenu: FC = () => {
                   {/* --- CORRECCIÓN: Se elimina el gradiente y se usa className para el color del arco --- */}
                   <motion.path
                     d="M 187.8 2.4 A 160 160 0 0 1 187.8 317.6"
-                    className={isDark ? "stroke-amber-400" : "stroke-teal-800"}
+                    className={isDark ? "stroke-amber-400" : "stroke-primary-dark_alt"}
                     strokeWidth="1.5"
                     fill="none"
                     filter="url(#glow)"
@@ -337,7 +337,7 @@ const InteractiveSideMenu: FC = () => {
             variants={listVariants}
           >
             <motion.div
-              className="absolute top-0 left-0 w-40 h-80 bg-primary-light/80 dark:bg-gray-800/90 backdrop-blur-sm rounded-r-full shadow-2xl -z-10"
+              className="absolute top-0 left-0 w-40 h-80 bg-primary-light/80 dark:bg-background-dark/90 backdrop-blur-sm rounded-r-full shadow-2xl -z-10"
               initial={false}
               animate={{ clipPath: isOpen ? "circle(100% at 25% 50%)" : "circle(8% at 25% 50%)" }}
               transition={{ type: "spring", stiffness: 100, damping: 15 }}

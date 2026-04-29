@@ -58,7 +58,7 @@ const TechStack = () => {
   const [isHovered, setIsHovered] = useState(false);
 
   return (
-    <section className="w-full py-20 px-4 sm:px-8 bg-primary-light/90  dark:bg-gray-900 ">
+    <section className="w-full py-20 px-4 sm:px-8 bg-primary-light/90  dark:bg-background-dark ">
       <div className="max-w-[90vw] mx-auto text-center">
         <motion.h2 
           className="text-4xl sm:text-5xl font-bold text-gray-200 dark:text-gray-300 mb-4"

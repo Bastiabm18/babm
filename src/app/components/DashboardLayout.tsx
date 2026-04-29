@@ -2,9 +2,10 @@
 
 import { ReactNode, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { signOut } from 'firebase/auth';
-import { getFirebaseAuth } from '@/lib/firebase/firebaseConfig';
-import DashboardSidebar from './DashboardSidebar'; // Asegúrate que la ruta a tu Sidebar es correcta
+// ELIMINADO: import { signOut } from 'firebase/auth';
+// ELIMINADO: import { getFirebaseAuth } from '@/lib/firebase/firebaseConfig';
+import { getSupabaseBrowser } from '@/lib/supabase/supabase-client'; // NUEVO
+import DashboardSidebar from './DashboardSidebar'; 
 import { FaSignOutAlt } from 'react-icons/fa';
 
 interface DashboardLayoutProps {
@@ -22,20 +23,21 @@ export default function DashboardLayout({ children, userEmail, userName, userRol
 
   const handleSignOut = async () => {
     try {
-      const auth = getFirebaseAuth();
-      await signOut(auth); // Cierra sesión en el cliente
+      // NUEVO: Usamos Supabase para cerrar sesión en el cliente
+      const supabase = getSupabaseBrowser();
+      await supabase.auth.signOut(); 
       
-      // Llama a la API para borrar la cookie del servidor
-      await fetch(`/${lang}/api/auth/session`, { method: 'DELETE' });
+      // CORREGIDO: Tu ruta API es /api/auth/session, NO /${lang}/api/auth/session
+      await fetch('/api/auth/session', { method: 'DELETE' });
 
-      router.push(`/${lang}/login`); // Redirige al login
+      router.push(`/${lang}/login`); 
     } catch (error) {
       console.error("Error during sign out:", error);
     }
   };
 
   return (
-    <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
+    <div className="flex h-screen bg-primary-light_alt dark:bg-background-dark_alt">
       <DashboardSidebar 
         collapsed={sidebarCollapsed} 
         onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
@@ -48,7 +50,7 @@ export default function DashboardLayout({ children, userEmail, userName, userRol
       <div className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ${
         sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'
       }`}>
-        <header className="bg-white dark:bg-gray-800 shadow-sm z-10">
+        <header className="bg-primary-light dark:bg-background-dark/90 shadow-sm z-10">
           <div className="flex items-center justify-between px-6 py-4">
             <button
               onClick={() => setMobileMenuOpen(true)}

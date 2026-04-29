@@ -75,7 +75,7 @@ export default function PostForm({ editingPost, onCancelEdit, onPostSaved }: Pos
     <motion.div 
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md"
+      className="bg-white dark:bg-background-dark p-6 rounded-lg shadow-md"
     >
       <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">
         {editingPost ? 'Editar Publicación' : 'Crear Nueva Publicación'}
@@ -85,22 +85,22 @@ export default function PostForm({ editingPost, onCancelEdit, onPostSaved }: Pos
         
         <div>
           <label htmlFor="titulo" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Título</label>
-          <input type="text" name="titulo" id="titulo" defaultValue={editingPost?.titulo} required className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-dark focus:border-primary-dark"/>
+          <input type="text" name="titulo" id="titulo" defaultValue={editingPost?.titulo} required className="mt-1 block w-full px-3 py-2 bg-white dark:bg-background-dark border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-dark focus:border-primary-dark"/>
         </div>
 
         <div>
           <label htmlFor="subtitulo" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Subtítulo</label>
-          <input type="text" name="subtitulo" id="subtitulo" defaultValue={editingPost?.subtitulo} required className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-dark focus:border-primary-dark"/>
+          <input type="text" name="subtitulo" id="subtitulo" defaultValue={editingPost?.subtitulo} required className="mt-1 block w-full px-3 py-2 bg-white dark:bg-background-dark border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-dark focus:border-primary-dark"/>
         </div>
 
         <div>
           <label htmlFor="descripcion" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Descripción</label>
-          <textarea name="descripcion" id="descripcion" rows={4} defaultValue={editingPost?.descripcion} required className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-dark focus:border-primary-dark"></textarea>
+          <textarea name="descripcion" id="descripcion" rows={4} defaultValue={editingPost?.descripcion} required className="mt-1 block w-full px-3 py-2 bg-white dark:bg-background-dark border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-dark focus:border-primary-dark"></textarea>
         </div>
 
         <div>
           <label htmlFor="contenido" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Enlace</label>
-          <input  name="contenido" id="contenido" defaultValue={editingPost?.contenido}  className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-dark focus:border-primary-dark"/>
+          <input  name="contenido" id="contenido" defaultValue={editingPost?.contenido}  className="mt-1 block w-full px-3 py-2 bg-white dark:bg-background-dark border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-dark focus:border-primary-dark"/>
         </div>
 
         <div>

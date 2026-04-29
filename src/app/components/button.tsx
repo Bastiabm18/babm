@@ -9,7 +9,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     const Comp = asChild ? 'span' : 'button';
     return (
       <Comp
-        className={`inline-flex items-center justify-center rounded-md bg-primary-light dark:bg-primary-dark text-white font-semibold px-4 py-2 hover:bg-primary-light/90 dark:hover:bg-primary-dark/90 transition-colors ${className || ''}`}
+        className={`inline-flex items-center justify-center rounded-md bg-primary-light dark:bg-background-dark text-white font-semibold px-4 py-2 hover:bg-primary-light/90 dark:hover:bg-primary-dark/90 transition-colors ${className || ''}`}
         ref={ref}
         {...props}
       >

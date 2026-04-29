@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { Faq } from '@/app/[lang]/dashboard/faq/actions';
 import FaqForm from './FaqForm';
 import FaqsTable from './FaqsTable';
+import { Faq } from '@/types/admin';
+
 interface FaqManagerProps {
   initialFaqs: Faq[];
 }
