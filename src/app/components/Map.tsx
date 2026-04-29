@@ -42,7 +42,7 @@ export default function Map({ position }: MapProps) {
   }, []);
 
   // --- Configuración de Mapbox ---
-  
+   const accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || ''
   const mapboxAttribution = 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>';
   
   // Elige dinámicamente el estilo del mapa según el tema
