@@ -142,7 +142,7 @@ export function Header() {
       initial={{ y: -100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
-      className=" sticky left-0 top-0 z-20 bg-primary-light dark:bg-background-dark_alt  text-white shadow-md backdrop-blur-sm bg-opacity-80"
+      className=" sticky left-0 top-0 z-20 bg-primary-light dark:bg-primary-light  text-white shadow-md backdrop-blur-sm bg-opacity-80"
     >
       <nav className="container w-full mx-auto flex justify-between items-center px-4 py-3">
         <div className="flex flex-row items-center space-x-4">
