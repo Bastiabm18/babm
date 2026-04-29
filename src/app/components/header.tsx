@@ -6,13 +6,13 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { FaSun, FaMoon, FaChevronDown, FaUser } from 'react-icons/fa';
 import { motion } from 'framer-motion';
-import Image from 'next/image';
 import NeonSign from './NeonSign';
 
 // 1. Importaciones para la autenticación
 import { useAuth } from '@/context/AuthContext';
 import { getFirebaseAuth } from '../../lib/firebase/firebaseConfig';
 import { signOut } from 'firebase/auth';
+import Image from 'next/image';
 
 // Definimos el tipo para cada objeto de idioma
 interface Language {
@@ -115,17 +115,14 @@ export function Header() {
     </div>
   );
 
-  // 4. Sub-componente para el menú de usuario
+  // 4. Sub-componente para el menú de usuario (ACTUALIZADO)
   const UserMenu = () => (
     <div className="relative z-30" ref={userMenuRef}>
-      <button onClick={() => setIsUserMenuOpen(!isUserMenuOpen)} className="w-10 h-10 rounded-full overflow-hidden border-2 border-secondary-dark hover:border-white transition-colors">
-        {user?.photoURL ? (
-          <Image src={user.photoURL} alt={user.displayName || 'User Avatar'} width={40} height={40} />
-        ) : (
-          <div className="w-full h-full bg-gray-600 flex items-center justify-center">
-            <FaUser className="text-white"/>
-          </div>
-        )}
+      <button 
+        onClick={() => setIsUserMenuOpen(!isUserMenuOpen)} 
+        className="w-10 h-10 rounded-full border-2 border-secondary-dark hover:border-white transition-colors flex items-center justify-center bg-gray-600/50 hover:bg-gray-600"
+      >
+        <FaUser className="text-white"/>
       </button>
       {isUserMenuOpen && (
         <div className="absolute top-full right-0 mt-2 w-48 bg-gray-700/90 dark:bg-background-dark/90 backdrop-blur-sm rounded-md shadow-lg py-1">
@@ -133,7 +130,7 @@ export function Header() {
             Dashboard
           </Link>
           <button onClick={handleLogout} className="block w-full text-left px-4 py-2 text-sm hover:bg-white/10">
-            {t('logout')} {/* Asegúrate de tener 'logout' en tus archivos de traducción */}
+            {t('logout')}
           </button>
         </div>
       )}
@@ -149,6 +146,7 @@ export function Header() {
     >
       <nav className="container w-full mx-auto flex justify-between items-center px-4 py-3">
         <div className="flex flex-row items-center space-x-4">
+          {/* NOTA: Volví a poner Image aquí abajo porque tu Logo sí lo usa */}
           <Link href={`/${i18n.language}`} className=" md:block  text-lg font-semibold hover:text-gray-300 transition-colors">
             <Image
               src="/babm_new_bg.png"
