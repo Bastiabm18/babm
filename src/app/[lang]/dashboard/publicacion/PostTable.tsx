@@ -1,10 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { Post, deletePost } from '@/app/[lang]/dashboard/publicacion/actions';
+import {  deletePost} from './actions'
 import { FaEdit, FaTrash, FaSpinner } from 'react-icons/fa';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Post } from '@/types/admin';
 
 interface PostsTableProps {
   posts: Post[];
