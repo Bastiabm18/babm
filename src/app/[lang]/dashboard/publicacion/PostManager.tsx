@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { Post } from '@/app/[lang]/dashboard/publicacion/actions';
 import PostForm from './PostForm';
 import PostsTable from './PostTable';
+import { Post } from '@/types/admin';
 
 interface PostManagerProps {
   initialPosts: Post[];
