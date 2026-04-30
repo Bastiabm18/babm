@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, FormEvent } from 'react';
-import {  createOrUpdateFaq } from '@/app/[lang]/dashboard/faq/actions';
+import {  createOrUpdateFaq } from './actions';
 import { FaSpinner } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 import { Faq } from '@/types/admin';

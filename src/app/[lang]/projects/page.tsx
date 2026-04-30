@@ -6,8 +6,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import Image from 'next/image';
 import { FaArrowLeft, FaSpinner, FaSearch, FaPlus, FaDownload } from 'react-icons/fa';
-import { getPosts, getPostById, Post } from "./actions"; // Ajusta la ruta a tu actions.ts
+import { getPosts, getPostById } from "./actions"; // Ajusta la ruta a tu actions.ts
 import { i18n } from '../../../../next.config';
+import { Post } from '@/types/admin';
 
 // ===================================================================
 // Componente para la VISTA DE DETALLE de un solo post
