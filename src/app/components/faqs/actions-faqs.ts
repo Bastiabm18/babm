@@ -1,6 +1,7 @@
 'use server';
 
-import { getAdminInstances } from '@/lib/firebase/firebase-admin';
+// 1. Usamos tu patrón de Supabase
+import { getSupabaseBrowser } from '@/lib/supabase/supabase-client';
 
 // Tipado para el contenido multilingüe
 type MultilangContent = {
@@ -23,28 +24,31 @@ export interface PublicFaq {
  */
 export async function getPublicFaqs(): Promise<PublicFaq[]> {
   try {
-    const { firestore } = getAdminInstances();
+    const supabase = getSupabaseBrowser();
     
-    // Hacemos una consulta para traer solo los documentos donde 'activo' es true
-    const faqsSnapshot = await firestore
-      .collection('frec_question')
-      .where('activo', '==', true)
-      .orderBy('fechaCreacion', 'desc')
-      .get();
+    // 2. Hacemos la consulta a Supabase
+    // .select() solo le pedimos los campos que necesita el público (optimización)
+    // .eq() es el equivalente al where('activo', '==', true) de Firebase
+    const { data, error } = await supabase
+      .from('pregunta_frecuente')
+      .select('id, pregunta, respuesta')
+      .eq('activo', true)
+      .order('fechaCreacion', { ascending: false });
+
+    if (error) throw error;
     
-    if (faqsSnapshot.empty) {
+    if (!data || data.length === 0) {
       return [];
     }
 
-    // Mapeamos los documentos al formato que nuestro componente necesita
-    return faqsSnapshot.docs.map(doc => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        pregunta: data.pregunta,
-        respuesta: data.respuesta,
-      };
-    });
+    // 3. Mapeamos la respuesta. 
+    // Supabase ya devuelve pregunta y respuesta como objetos JS, así que no hay que transformar nada.
+    return data.map(faq => ({
+      id: faq.id,
+      pregunta: faq.pregunta,
+      respuesta: faq.respuesta,
+    }));
+    
   } catch (error) {
     console.error('Error fetching public FAQs:', error);
     // En caso de error, devolvemos un array vacío para no romper la página.
