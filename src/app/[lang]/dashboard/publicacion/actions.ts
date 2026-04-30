@@ -1,59 +1,44 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { getAdminInstances } from '@/lib/firebase/firebase-admin';
-import { getStorage } from 'firebase-admin/storage';
-import { FieldValue } from 'firebase-admin/firestore';
+// Usamos exactamente el mismo import que usas en tus FAQs
+import { getSupabaseBrowser } from '@/lib/supabase/supabase-client';
+import { Post, FormState } from '@/types/admin'; // Asegúrate de tener estos tipos en tu archivo de tipos, si no, déjalos como interface aquí mismo.
 
-export interface Post {
-  id: string;
-  titulo: string;
-  subtitulo: string;
-  descripcion: string;
-  contenido?: string; 
-  fecha: string;
-  imagenes: { url: string; path: string }[];
-}
-
-// Interfaz para el valor de retorno de la acción
-export interface FormState {
-  success: boolean;
-  message: string;
-  post?: Post; // El post guardado es opcional
-}
-
-
+// --- OBTENER TODAS LAS PUBLICACIONES ---
 export async function getPosts(): Promise<Post[]> {
   try {
-    const { firestore } = getAdminInstances();
-    const postsSnapshot = await firestore.collection('posts').orderBy('fecha', 'desc').get();
+    const supabase = getSupabaseBrowser();
     
-    if (postsSnapshot.empty) return [];
+    const { data, error } = await supabase
+      .from('publicacion')
+      .select('*')
+      .order('fecha', { ascending: false });
 
-    return postsSnapshot.docs.map(doc => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        titulo: data.titulo,
-        subtitulo: data.subtitulo,
-        descripcion: data.descripcion,
-        contenido: data.contenido || '',
-        fecha: new Date(data.fecha.seconds * 1000).toISOString(),
-        imagenes: data.imagenes || [],
-      };
-    });
-  } catch (error) {
+    if (error) throw error;
+    
+    return data.map(item => ({
+      id: item.id,
+      titulo: item.titulo,
+      subtitulo: item.subtitulo,
+      descripcion: item.descripcion,
+      contenido: item.contenido || '',
+      fecha: new Date(item.fecha).toISOString(),
+      imagenes: item.imagenes || [],
+    })) as Post[];
+  } catch (error: any) {
     console.error('Error fetching posts:', error);
     throw new Error('No se pudieron obtener las publicaciones.');
   }
 }
 
-// ✅ FIX: La función ahora devuelve el post guardado
+// --- CREAR O ACTUALIZAR UNA PUBLICACIÓN ---
 export async function createOrUpdatePost(formData: FormData): Promise<FormState> {
-  const { firestore } = getAdminInstances();
-  const storage = getStorage().bucket(process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET);
-
+  const supabase = getSupabaseBrowser();
+  const storage = supabase.storage.from('posts');
+  
   const postId = formData.get('postId') as string | null;
+
   const rawData = {
     titulo: formData.get('titulo') as string,
     subtitulo: formData.get('subtitulo') as string,
@@ -65,78 +50,112 @@ export async function createOrUpdatePost(formData: FormData): Promise<FormState>
     const newImages: { url: string; path: string }[] = [];
     const files = formData.getAll('imagenes') as File[];
 
+    // 1. Subimos las nuevas imágenes al Storage
     for (const file of files) {
       if (file.size > 0) {
         const buffer = Buffer.from(await file.arrayBuffer());
-        const path = `posts/${Date.now()}-${file.name}`;
-        const storageFile = storage.file(path);
+        const path = `${Date.now()}-${file.name}`;
         
-        await storageFile.save(buffer, { metadata: { contentType: file.type } });
-        await storageFile.makePublic();
-        newImages.push({ url: storageFile.publicUrl(), path });
+        const { error: uploadError } = await storage.upload(path, buffer, {
+          contentType: file.type,
+          upsert: false
+        });
+
+        if (uploadError) throw uploadError;
+
+        const { data: publicUrlData } = storage.getPublicUrl(path);
+        newImages.push({ url: publicUrlData.publicUrl, path });
       }
     }
 
-    let savedPostId = postId;
+    let result;
+
     if (postId) {
-      const postRef = firestore.collection('posts').doc(postId);
-      await postRef.update({
-        ...rawData,
-        ...(newImages.length > 0 && { imagenes: FieldValue.arrayUnion(...newImages) }),
-      });
+      // 2A. ACTUALIZAR: Buscamos imágenes existentes para no borrarlas
+      const { data: existingPost, error: fetchError } = await supabase
+        .from('publicacion')
+        .select('imagenes')
+        .eq('id', postId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      const currentImages = existingPost?.imagenes || [];
+      const finalImages = [...currentImages, ...newImages];
+
+      // Actualizamos con las imágenes viejas + nuevas
+      result = await supabase
+        .from('publicacion')
+        .update({ ...rawData, imagenes: finalImages })
+        .eq('id', postId)
+        .select()
+        .single();
+
     } else {
-      const newPostRef = await firestore.collection('posts').add({
-        ...rawData,
-        fecha: FieldValue.serverTimestamp(),
-        imagenes: newImages,
-      });
-      savedPostId = newPostRef.id;
+      // 2B. CREAR: Insertamos directamente
+      result = await supabase
+        .from('publicacion')
+        .insert([{ ...rawData, imagenes: newImages }])
+        .select()
+        .single();
     }
 
-    // Obtenemos el documento recién guardado para devolverlo
-    const finalDoc = await firestore.collection('posts').doc(savedPostId!).get();
-    const finalData = finalDoc.data()!;
+    if (result.error) throw result.error;
+
     const savedPost: Post = {
-        id: finalDoc.id,
-        titulo: finalData.titulo,
-        subtitulo: finalData.subtitulo,
-        descripcion: finalData.descripcion,
-        contenido: finalData.contenido || '',
-        fecha: new Date(finalData.fecha.seconds * 1000).toISOString(),
-        imagenes: finalData.imagenes || [],
+      id: result.data.id,
+      titulo: result.data.titulo,
+      subtitulo: result.data.subtitulo,
+      descripcion: result.data.descripcion,
+      contenido: result.data.contenido || '',
+      fecha: new Date(result.data.fecha).toISOString(),
+      imagenes: result.data.imagenes || [],
     };
 
     revalidatePath('/dashboard/publicacion');
     return { success: true, message: 'Publicación guardada con éxito.', post: savedPost };
-  } catch (error) {
+    
+  } catch (error: any) {
     console.error('Error saving post:', error);
-    return { success: false, message: 'Error al guardar la publicación.' };
+    return { success: false, message: error.message || 'Error al guardar la publicación.' };
   }
 }
 
+// --- ELIMINAR UNA PUBLICACIÓN ---
 export async function deletePost(postId: string): Promise<{ success: boolean; message: string }> {
-    try {
-        const { firestore } = getAdminInstances();
-        const storage = getStorage().bucket(process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET);
-        const postRef = firestore.collection('posts').doc(postId);
-        const postDoc = await postRef.get();
+  try {
+    const supabase = getSupabaseBrowser();
+    const storage = supabase.storage.from('posts');
 
-        if (!postDoc.exists) throw new Error('La publicación no existe.');
+    // 1. Obtenemos las imágenes para borrarlas del Storage
+    const { data: post, error: fetchError } = await supabase
+      .from('publicacion')
+      .select('imagenes')
+      .eq('id', postId)
+      .single();
 
-        const postData = postDoc.data() as Post;
+    if (fetchError) throw fetchError;
 
-        if (postData.imagenes?.length > 0) {
-        for (const imagen of postData.imagenes) {
-            if (imagen.path) await storage.file(imagen.path).delete().catch(err => console.error(`Failed to delete image ${imagen.path}:`, err));
-        }
-        }
-
-        await postRef.delete();
-
-        revalidatePath('/dashboard/publicacion');
-        return { success: true, message: 'Publicación eliminada.' };
-    } catch (error) {
-        console.error('Error deleting post:', error);
-        return { success: false, message: 'No se pudo eliminar la publicación.' };
+    // 2. Borramos las imágenes del bucket
+    if (post?.imagenes?.length > 0) {
+      const pathsToDelete = post.imagenes.map((img: { path: string }) => img.path);
+      const { error: deleteStorageError } = await storage.remove(pathsToDelete);
+      if (deleteStorageError) console.error('Error borrando imágenes:', deleteStorageError);
     }
+
+    // 3. Borramos la fila de la tabla
+    const { error: deleteDbError } = await supabase
+      .from('publicacion')
+      .delete()
+      .eq('id', postId);
+
+    if (deleteDbError) throw deleteDbError;
+
+    revalidatePath('/dashboard/publicacion');
+    return { success: true, message: 'Publicación eliminada.' };
+    
+  } catch (error: any) {
+    console.error('Error deleting post:', error);
+    return { success: false, message: error.message || 'No se pudo eliminar la publicación.' };
+  }
 }

@@ -1,6 +1,7 @@
 'use server';
 
-import { getAdminInstances } from "@/lib/firebase/firebase-admin"; // Revisa que la ruta sea correcta
+// 1. Usamos tu patrón de Supabase en vez de Firebase
+import { getSupabaseBrowser } from '@/lib/supabase/supabase-client';
 
 export interface Post {
   id: string;
@@ -13,26 +14,33 @@ export interface Post {
 
 export async function getPosts(): Promise<Post[]> {
   try {
-    const { firestore } = getAdminInstances();
-    const postsSnapshot = await firestore.collection('posts').orderBy('fecha', 'desc').get();
+    const supabase = getSupabaseBrowser();
     
-    if (postsSnapshot.empty) {
+    // 2. Consultamos la tabla 'publicacion' ordenada por fecha descendente
+    const { data, error } = await supabase
+      .from('publicacion')
+      .select('*')
+      .order('fecha', { ascending: false });
+
+    if (error) throw error;
+    
+    if (!data || data.length === 0) {
       return [];
     }
 
-    return postsSnapshot.docs.map(doc => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        titulo: data.titulo || '',
-        subtitulo: data.subtitulo || '',
-        descripcion: data.descripcion || '',
-        fecha: new Date(data.fecha._seconds * 1000).toISOString(),
-        imagenes: data.imagenes || [],
-      };
-    });
+    // 3. Mapeamos la respuesta. 
+    // Supabase ya devuelve la fecha como string ISO, así que no hay que hacer cálculos raros con _seconds
+    return data.map(item => ({
+      id: item.id,
+      titulo: item.titulo || '',
+      subtitulo: item.subtitulo || '',
+      descripcion: item.descripcion || '',
+      fecha: item.fecha, 
+      imagenes: item.imagenes || [],
+    }));
+    
   } catch (error) {
     console.error('Error al obtener los posts:', error);
-    return [];
+    return []; // Devolvemos array vacío para no romper el frontend
   }
 }

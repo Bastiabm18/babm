@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect, useRef, FormEvent } from 'react';
-import { Post, createOrUpdatePost } from '@/app/[lang]/dashboard/publicacion/actions';
+import {  createOrUpdatePost } from '@/app/[lang]/dashboard/publicacion/actions';
 import { FaPlus, FaTimes, FaSpinner } from 'react-icons/fa';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Post } from '@/types/admin';
 
 
 interface PostFormProps {

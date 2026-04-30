@@ -20,7 +20,7 @@ interface RootLayoutProps {
   params: { lang: string };
 }
 export const metadata: Metadata = {
-  title: "BABM Web Development",
+  title: "BABM Web Page",
   description: "Developed by BABM",
   icons: {
     icon: "/icon.ico",

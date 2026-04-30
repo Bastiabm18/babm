@@ -11,7 +11,12 @@ const nextConfig = {
         hostname: 'storage.googleapis.com', // Para imágenes de Firebase Storage
          pathname: '/babm-web.firebasestorage.app/**', // <-- Este es el path a tu bucket
      
-      },
+      },{
+        protocol: 'https',
+        hostname:'kohqdmwhqxjwgzsriieu.supabase.co',
+        
+
+      }
 
     ],
   },

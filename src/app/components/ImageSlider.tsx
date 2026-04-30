@@ -13,22 +13,22 @@ import { useRouter } from 'next/navigation';
 const newsItems = [
   {
     id: 1,
-    desktop_img: 'image_1.png',
-    mobile_img: 'vertical_1.jpg',
+    desktop_img: 'membresias.png',
+    mobile_img: 'menu cel.png',
     title_key: 'title1',
     subtitle_key: 'subtitle1'
   },
   {
     id: 2,
-    desktop_img: 'dash_babm.png',
-    mobile_img: 'mapa.png',
+    desktop_img: 'mapa 2.png',
+    mobile_img: 'mapa 1.png',
     title_key: 'title2',
     subtitle_key: 'subtitle2'
   },
   {
     id: 3,
     desktop_img: 'proyecto2.jpg',
-    mobile_img: 'vertical_3.jpg',
+    mobile_img: 'vertical_3.png',
     title_key: 'title3',
     subtitle_key: 'subtitle3'
   },
@@ -41,15 +41,15 @@ const newsItems = [
   },
   {
     id: 5,
-    desktop_img: 'jcs_1.png',
-    mobile_img: 'jcs_2.png',
+    desktop_img: 'dash_babm.png',
+    mobile_img: 'vertical sup.png',
     title_key: 'title5',
     subtitle_key: 'subtitle5'
   },
    {
     id: 6,
     desktop_img: 'vet_en_ruta.png', // Usando imágenes de ejemplo
-    mobile_img: 'vertical_1.jpg',
+    mobile_img: 'vertical cat.png',
     title_key: 'title6',
     subtitle_key: 'subtitle6'
   }
