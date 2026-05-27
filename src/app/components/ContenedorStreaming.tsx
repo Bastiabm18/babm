@@ -170,7 +170,7 @@ const procesarOfertaEntrante = async (oferta: any) => {
   };
 
   // También manejar el caso de que no lleguen streams
-  pc.onaddstream = (event) => {
+  pc.ontrack  = (event) => {
     console.log(" Stream añadido (legacy):", event.stream);
     if (videoRemotoRef.current) {
       videoRemotoRef.current.srcObject = event.stream;
