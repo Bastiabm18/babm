@@ -270,7 +270,7 @@ const InteractiveSideMenu: FC = () => {
             </AnimatePresence>
             
             <motion.button
-              className="w-16 h-16 rounded-full font-goldman flex items-center justify-center focus:outline-none bg-secondary-light/50 dark:bg-background-dark/80 text-white shadow-lg my-2"
+              className="w-16 h-16 rounded-full font-goldman flex items-center justify-center focus:outline-none bg-background-dark/50 dark:bg-background-light/50 text-white shadow-lg my-2"
               onClick={() => setIsOpen(!isOpen)}
               animate={{ rotate: isOpen ? -45 : 0 }}
               whileHover={{ scale: 1.1 }}

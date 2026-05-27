@@ -34,7 +34,7 @@ const newsItems = [
   },
   {
     id: 4,
-    desktop_img: 'vet_2.png',
+    desktop_img: 'humobile.jpeg',
     mobile_img: 'vet_agenda.png',
     title_key: 'title4',
     subtitle_key: 'subtitle4'

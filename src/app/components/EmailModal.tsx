@@ -32,7 +32,7 @@ export default function EmailModal({ onClose, texts }: EmailModalProps) {
         animate={{ scale: 1, opacity: 1, y: '-50%', x: '-50%' }}
         exit={{ scale: 0.9, opacity: 0 }}
         transition={{ type: 'spring', damping: 15, stiffness: 200 }}
-        className="fixed top-1/2 left-1/2 z-[1300] w-[90vw] max-w-md p-6 rounded-lg bg-background-light dark:bg-background-dark shadow-xl"
+        className="fixed top-1/2 left-1/2 z-[1300] w-[90vw] max-w-md p-6 rounded-lg bg-neutral-900 shadow-xl"
       >
         <button
           onClick={onClose}
@@ -41,7 +41,7 @@ export default function EmailModal({ onClose, texts }: EmailModalProps) {
           <FiX size={24} />
         </button>
 
-        <h2 className="text-2xl font-bold mb-4 text-text-light dark:text-text-dark">{texts.title}</h2>
+        <h2 className="text-2xl font-bold mb-4 text-primary-light dark:text-primary-dark">{texts.title}</h2>
         <form onSubmit={(e) => e.preventDefault()} className="space-y-4">
           <input
             type="email"
@@ -57,7 +57,7 @@ export default function EmailModal({ onClose, texts }: EmailModalProps) {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             type="submit"
-            className="w-full py-2 px-4 rounded-lg bg-primary-light dark:bg-background-dark text-white font-semibold hover:opacity-90 transition-opacity"
+            className="w-full py-2 px-4 rounded-lg bg-primary-light dark:bg-primary-dark text-white font-semibold hover:opacity-90 transition-opacity"
           >
             {texts.sendButton}
           </motion.button>

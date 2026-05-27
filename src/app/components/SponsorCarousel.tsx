@@ -18,7 +18,6 @@ const sponsorsTexts = {
 const logos = [
   { src: '/catiray.png', alt: 'Catiray', url: '#', name: 'Catiray FC' },
   { src: '/carrera.png', alt: 'Carrera', url: '#', name: 'Union Los Carrera' },
-  { src: '/jaiselec_logo.png', alt: 'Jaiselec', url: 'https://jaiselec--jaiselec.us-central1.hosted.app/', name: 'Jaiselec' },
   { src: '/spaolimpo.ico', alt: 'Olimpo Spa', url: '#', name: 'Spa Olimpo' },
 ];
 

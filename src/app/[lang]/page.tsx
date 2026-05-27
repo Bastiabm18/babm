@@ -11,7 +11,10 @@ import { PromoModal } from '../components/PromoModal';
 import { Sponsors } from '../components/SponsorCarousel';
 import AboutUs from '../components/About';
 import HeroSlider from '../components/HeroSlider';
+import ContenedorStreaming from '../components/ContenedorStreaming';
+import { obtenerOCrearTransmision, actualizarOfertaSDP, obtenerOfertaSDP, actualizarRespuestaSDP, enviarMensajeChat } from '../components/actions/actions';
 export default function Home() {
+  const idSalaPruebas = "11111111-1111-1111-1111-111111111111";
   const { t } = useTranslation();
   return (
     <div className="min-h-screen flex flex-col gap-20 mb-10 items-center justify-center  bg-background-light dark:bg-background-dark">
@@ -21,6 +24,16 @@ export default function Home() {
       </section>
       <section className='flex items-center justify-center w-[95vw] '>
       <CodeSimulator/>
+      </section>
+      <section className='flex items-center justify-center w-[95vw]'>
+        <ContenedorStreaming 
+          idTransmision={idSalaPruebas} 
+          accionAsegurarSala={obtenerOCrearTransmision}
+          accionActualizarOferta={actualizarOfertaSDP}
+          accionObtenerOferta={obtenerOfertaSDP}
+          accionActualizarRespuesta={actualizarRespuestaSDP}
+          accionEnviarMensaje={enviarMensajeChat}
+        />
       </section>
       <section id="proyectos" className='flex items-center justify-center w-[95vw]'>
         <ProjectsGrid />

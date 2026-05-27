@@ -6,6 +6,7 @@ import { ReactNode } from 'react';
 import { Header } from './header';
 import { Footer } from './footer';
 import InteractiveSideMenu from './InteractiveSideMenu';
+import PWAInstallPrompt from './PWAInstallPrompt';
 
 interface LayoutManagerProps {
   children: ReactNode;
@@ -22,7 +23,7 @@ export default function LayoutManager({ children }: LayoutManagerProps) {
       {/* Renderizado condicional basado en la ruta actual */}
       {showMainLayout && <Header />}
       {showMainLayout && <InteractiveSideMenu />}
-      
+      <PWAInstallPrompt />
       <main>{children}</main>
       
       {showMainLayout && <Footer />}

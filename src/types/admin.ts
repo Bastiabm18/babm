@@ -40,3 +40,9 @@ export interface FormState {
   message: string;
   post?: Post; // Opcional porque al eliminar no devuelve el post
 }
+
+export interface Mensaje {
+  id: string;
+  nombre_usuario: string;
+  mensaje: string;
+}

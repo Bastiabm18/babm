@@ -146,7 +146,7 @@ export default function ContactPage() {
                 </div>
               </div>
 
-              <div className="mt-8 bg-white dark:bg-background-dark/50 p-6 rounded-lg shadow-lg">
+              <div className="mt-8 bg-background-light_alt dark:bg-background-dark_alt p-6 rounded-lg shadow-lg">
                 <h2 className="text-2xl font-bold mb-4 text-primary-light dark:text-primary-dark">{texts.socialTitle}</h2>
                 <div className="flex justify-center sm:justify-start space-x-6">
                   {socialLinks.map((social, index) => (

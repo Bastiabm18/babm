@@ -7,7 +7,8 @@ import type { Metadata } from 'next';
 import { initTranslations } from '@/lib/i18n';
 import TranslationsProvider from '../components/TranslationsProvider';
 import { AuthProvider } from '@/context/AuthContext';
-import LayoutManager from '../components/LayoutManager'; // 1. Importa el nuevo componente
+import LayoutManager from '../components/LayoutManager';
+import PWAInstallPrompt from '../components/PWAInstallPrompt';
 
 const inter = Inter({ subsets: ['latin'] });
 const alfaSlabOne = Alfa_Slab_One({ subsets: ['latin'], weight: ['400'] });
@@ -38,6 +39,7 @@ export default async function RootLayout({ children, params }: RootLayoutProps) 
             {/* 2. Usa LayoutManager para que maneje la lógica de la UI */}
             <LayoutManager>
               {children}
+              
             </LayoutManager>
           </AuthProvider>
         </TranslationsProvider>

@@ -117,11 +117,11 @@ const TechStack = () => {
             <motion.a
               onMouseEnter={() => setIsHovered(true)}
               onMouseLeave={() => setIsHovered(false)}
-              className="relative flex justify-between items-center w-full h-12 font-bold text-secondary-light dark:text-secondary-dark rounded-md"
+              className="relative flex justify-between items-center w-full h-12 font-bold text-primary-light dark:text-primary-dark rounded-md"
             >
-              <div className="flex-grow h-[2px] relative bg-secondary-light/20 dark:bg-secondary-dark/20">
+              <div className="flex-grow h-[2px] relative bg-primary-light/20 dark:bg-primary-dark/20">
                 <motion.div
-                  className="absolute top-0 left-0 w-full h-full bg-secondary-light dark:bg-secondary-dark"
+                  className="absolute top-0 left-0 w-full h-full bg-primary-light dark:bg-primary-dark"
                   initial={{ x: "-100%" }}
                   animate={{ x: isHovered ? "0%" : "-100%" }}
                   transition={{ duration: 1.0, ease: [0.7, 0, 0.3, 1] }}
@@ -131,7 +131,7 @@ const TechStack = () => {
                       {isHovered && (
                         <>
                           <motion.div
-                            className="w-3 h-3 rounded-full bg-secondary-dark"
+                            className="w-3 h-3 rounded-full bg-primary-light dark:bg-primary-dark"
                             style={{ boxShadow: "0 0 25px 10px #D8B4FE" }}
                             initial={{ scale: 0 }}
                             animate={{ scale: 1 }}
@@ -146,7 +146,7 @@ const TechStack = () => {
                 </motion.div>
               </div>
               <motion.span
-                className="ml-4 pr-2 z-10 text-gray-600 dark:text-gray-300 text-3xl cursor-pointer"
+                className="ml-4 pr-2 z-10 text-primary-light dark:text-primary-dark text-3xl cursor-pointer"
                 variants={{
                   rest: { x: 0 },
                   hover: { x: [-3, 3, -3, 3, 0] }
