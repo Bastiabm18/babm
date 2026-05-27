@@ -34,9 +34,16 @@ export default function ContenedorStreaming({
   const flujoLocal = useRef<MediaStream | null>(null);
 
   const supabase = getSupabaseBrowser();
-  const configuracionRTC = {
-    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
-  };
+const configuracionRTC = {
+  iceServers: [
+    { urls: 'stun:stun.anyfirewall.com:3478' },
+    {
+      urls: 'turn:turn.anyfirewall.com:3478',
+      username: 'anyfirewall', // Credenciales públicas de OpenRelay
+      credential: 'anyfirewall'
+    }
+  ],
+};
 
   // 1. Asegurar la existencia de la sala en Supabase de forma asíncrona al montar
   useEffect(() => {
@@ -80,31 +87,32 @@ export default function ContenedorStreaming({
   }, [idTransmision, rol, supabase]);
 
   // --- LÓGICA DEL EMISOR (TRANSMISOR) ---
-  const iniciarTransmision = async () => {
-    setRol('transmisor');
-    setEnVivo(true);
+ const iniciarTransmision = async () => {
+  setRol('transmisor');
+  setEnVivo(true);
 
-    const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-    flujoLocal.current = stream;
-    if (videoLocalRef.current) videoLocalRef.current.srcObject = stream;
+  const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+  flujoLocal.current = stream;
+  if (videoLocalRef.current) videoLocalRef.current.srcObject = stream;
 
-    const pc = new RTCPeerConnection(configuracionRTC);
-    conexionPeer.current = pc;
+  const pc = new RTCPeerConnection(configuracionRTC);
+  conexionPeer.current = pc;
 
-    stream.getTracks().forEach((track) => pc.addTrack(track, stream));
+  stream.getTracks().forEach((track) => pc.addTrack(track, stream));
 
-    const oferta = await pc.createOffer();
-    await pc.setLocalDescription(oferta);
+  const oferta = await pc.createOffer();
+  await pc.setLocalDescription(oferta);
 
-    await accionActualizarOferta(idTransmision, oferta);
+  // Enviamos la oferta inicial al tiro para que el espectador la pesque
+  await accionActualizarOferta(idTransmision, oferta);
 
-pc.onicecandidate = async (event) => {
-      if (event.candidate === null) {
-        console.log("ICE Gathering completo en Transmisor. Guardando oferta final...");
-        await accionActualizarOferta(idTransmision, pc.localDescription);
-      }
-    };
+  // Cada vez que descubra una ruta de red nueva, actualiza la base de datos
+  pc.onicecandidate = async (event) => {
+    if (pc.localDescription) {
+      await accionActualizarOferta(idTransmision, pc.localDescription);
+    }
   };
+};
 
   // --- LÓGICA DEL RECEPTOR (ESPECTADOR) ---
   const unirseTransmision = async () => {
@@ -117,27 +125,30 @@ pc.onicecandidate = async (event) => {
     }
   };
 
-  const procesarOfertaEntrante = async (oferta: any) => {
-    const pc = new RTCPeerConnection(configuracionRTC);
-    conexionPeer.current = pc;
+ const procesarOfertaEntrante = async (oferta: any) => {
+  const pc = new RTCPeerConnection(configuracionRTC);
+  conexionPeer.current = pc;
 
-    pc.ontrack = (event) => {
-      if (videoRemotoRef.current) {
-        videoRemotoRef.current.srcObject = event.streams[0];
-      }
-    };
-
-    await pc.setRemoteDescription(new RTCSessionDescription(oferta));
-    const respuesta = await pc.createAnswer();
-    await pc.setLocalDescription(respuesta);
-
-  pc.onicecandidate = async (event) => {
-      if (event.candidate === null) {
-        console.log("ICE Gathering completo en Espectador. Guardando respuesta final...");
-        await accionActualizarRespuesta(idTransmision, pc.localDescription);
-      }
-    };
+  pc.ontrack = (event) => {
+    if (videoRemotoRef.current && event.streams[0]) {
+      videoRemotoRef.current.srcObject = event.streams[0];
+    }
   };
+
+  await pc.setRemoteDescription(new RTCSessionDescription(oferta));
+  const respuesta = await pc.createAnswer();
+  await pc.setLocalDescription(respuesta);
+
+  // Sube la respuesta inicial al tiro
+  await accionActualizarRespuesta(idTransmision, respuesta);
+
+  // Y la va actualizando con los nuevos candidatos que encuentre
+  pc.onicecandidate = async (event) => {
+    if (pc.localDescription) {
+      await accionActualizarRespuesta(idTransmision, pc.localDescription);
+    }
+  };
+};
 
   const manejarEnvioMensaje = async (e: React.FormEvent) => {
     e.preventDefault();
