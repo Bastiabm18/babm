@@ -51,7 +51,7 @@ const configuracionRTC = {
   }, [idTransmision, accionAsegurarSala]);
 
   // 2. Controladores en tiempo real (Suscripciones puras)
-  useEffect(() => {
+useEffect(() => {
     const canalChat = supabase
       .channel(`chat-${idTransmision}`)
       .on(
@@ -69,11 +69,24 @@ const configuracionRTC = {
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'transmision_vivo', filter: `id=eq.${idTransmision}` },
         async (payload: any) => {
-          if (rol === 'espectador' && payload.new.oferta_sdp && !conexionPeer.current) {
+          const pc = conexionPeer.current;
+
+          if (rol === 'espectador' && payload.new.oferta_sdp) {
+            if (pc && pc.signalingState !== "stable") {
+              return;
+            }
             procesarOfertaEntrante(payload.new.oferta_sdp);
           }
-          if (rol === 'transmisor' && payload.new.respuesta_sdp && conexionPeer.current) {
-            await conexionPeer.current.setRemoteDescription(new RTCSessionDescription(payload.new.respuesta_sdp));
+          
+          if (rol === 'transmisor' && payload.new.respuesta_sdp && pc) {
+            if (pc.signalingState === "stable" || pc.remoteDescription !== null) {
+              return;
+            }
+            try {
+              await pc.setRemoteDescription(new RTCSessionDescription(payload.new.respuesta_sdp));
+            } catch (err) {
+              console.error("Error seteando remote description:", err);
+            }
           }
         }
       )
@@ -85,7 +98,6 @@ const configuracionRTC = {
       if (flujoLocal.current) flujoLocal.current.getTracks().forEach(track => track.stop());
     };
   }, [idTransmision, rol, supabase]);
-
   // --- LÓGICA DEL EMISOR (TRANSMISOR) ---
  const iniciarTransmision = async () => {
   setRol('transmisor');
