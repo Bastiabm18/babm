@@ -27,6 +27,8 @@ export default function ContenedorStreaming({
   const [mensajes, setMensajes] = useState<Mensaje[]>([]);
   const [entradaMensaje, setEntradaMensaje] = useState('');
   const [nombreUsuario] = useState(`Usuario_${Math.floor(Math.random() * 1000)}`);
+  
+   const [respuestaEnviada, setRespuestaEnviada] = useState(false);
 
   const videoLocalRef = useRef<HTMLVideoElement>(null);
   const videoRemotoRef = useRef<HTMLVideoElement>(null);
@@ -63,7 +65,6 @@ useEffect(() => {
       )
       .subscribe();
 
-   const [respuestaEnviada, setRespuestaEnviada] = useState(false);
 
 const canalVideo = supabase
   .channel(`video-${idTransmision}`)
