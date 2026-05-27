@@ -63,38 +63,31 @@ useEffect(() => {
       )
       .subscribe();
 
-    const canalVideo = supabase
-      .channel(`video-${idTransmision}`)
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'transmision_vivo', filter: `id=eq.${idTransmision}` },
-        async (payload: any) => {
-              console.log(" Cambio detectado en transmision_vivo:", payload.new);
-          console.log("Rol actual:", rol);
-          console.log("¿Tiene oferta_sdp?", !!payload.new.oferta_sdp);
-          console.log("¿Tiene respuesta_sdp?", !!payload.new.respuesta_sdp);
-          const pc = conexionPeer.current;
+   const [respuestaEnviada, setRespuestaEnviada] = useState(false);
 
-          if (rol === 'espectador' && payload.new.oferta_sdp) {
-            if (pc && pc.signalingState !== "stable") {
-              return;
-            }
-            procesarOfertaEntrante(payload.new.oferta_sdp);
-          }
-          
-          if (rol === 'transmisor' && payload.new.respuesta_sdp && pc) {
-            if (pc.signalingState === "stable" || pc.remoteDescription !== null) {
-              return;
-            }
-            try {
-              await pc.setRemoteDescription(new RTCSessionDescription(payload.new.respuesta_sdp));
-            } catch (err) {
-              console.error("Error seteando remote description:", err);
-            }
-          }
+const canalVideo = supabase
+  .channel(`video-${idTransmision}`)
+  .on(
+    'postgres_changes',
+    { event: 'UPDATE', schema: 'public', table: 'transmision_vivo', filter: `id=eq.${idTransmision}` },
+    async (payload: any) => {
+      const pc = conexionPeer.current;
+
+      if (rol === 'espectador' && payload.new.oferta_sdp && !respuestaEnviada) {
+        setRespuestaEnviada(true);
+        await procesarOfertaEntrante(payload.new.oferta_sdp);
+      }
+      
+      if (rol === 'transmisor' && payload.new.respuesta_sdp && pc && !pc.remoteDescription) {
+        try {
+          await pc.setRemoteDescription(new RTCSessionDescription(payload.new.respuesta_sdp));
+        } catch (err) {
+          console.error("Error seteando remote description:", err);
         }
-      )
-      .subscribe();
+      }
+    }
+  )
+  .subscribe();
 
     return () => {
       canalChat.unsubscribe();
@@ -137,15 +130,17 @@ const iniciarTransmision = async () => {
 };
 
   // --- LÓGICA DEL RECEPTOR (ESPECTADOR) ---
-  const unirseTransmision = async () => {
-    setRol('espectador');
-    setEnVivo(true);
+const unirseTransmision = async () => {
+  setRol('espectador');
+  setEnVivo(true);
 
-    const ofertaSdp = await accionObtenerOferta(idTransmision);
-    if (ofertaSdp) {
-      procesarOfertaEntrante(ofertaSdp);
-    }
-  };
+  const ofertaSdp = await accionObtenerOferta(idTransmision);
+  
+  if (ofertaSdp) {
+    setRespuestaEnviada(true);
+    await procesarOfertaEntrante(ofertaSdp);
+  }
+};
 
 const procesarOfertaEntrante = async (oferta: any) => {
   // Evitar múltiples conexiones
