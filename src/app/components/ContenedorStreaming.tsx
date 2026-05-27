@@ -103,13 +103,12 @@ const configuracionRTC = {
   const oferta = await pc.createOffer();
   await pc.setLocalDescription(oferta);
 
-  // Enviamos la oferta inicial al tiro para que el espectador la pesque
   await accionActualizarOferta(idTransmision, oferta);
 
-  // Cada vez que descubra una ruta de red nueva, actualiza la base de datos
   pc.onicecandidate = async (event) => {
     if (pc.localDescription) {
-      await accionActualizarOferta(idTransmision, pc.localDescription);
+      const sdpPlano = JSON.parse(JSON.stringify(pc.localDescription));
+      await accionActualizarOferta(idTransmision, sdpPlano);
     }
   };
 };
@@ -126,6 +125,10 @@ const configuracionRTC = {
   };
 
  const procesarOfertaEntrante = async (oferta: any) => {
+  if (conexionPeer.current && conexionPeer.current.signalingState === "stable") {
+    return;
+  }
+
   const pc = new RTCPeerConnection(configuracionRTC);
   conexionPeer.current = pc;
 
@@ -139,17 +142,15 @@ const configuracionRTC = {
   const respuesta = await pc.createAnswer();
   await pc.setLocalDescription(respuesta);
 
-  // Sube la respuesta inicial al tiro
   await accionActualizarRespuesta(idTransmision, respuesta);
 
-  // Y la va actualizando con los nuevos candidatos que encuentre
   pc.onicecandidate = async (event) => {
-    if (pc.localDescription) {
-      await accionActualizarRespuesta(idTransmision, pc.localDescription);
+    if (pc.localDescription && pc.signalingState !== "closed") {
+      const sdpPlano = JSON.parse(JSON.stringify(pc.localDescription));
+      await accionActualizarRespuesta(idTransmision, sdpPlano);
     }
   };
 };
-
   const manejarEnvioMensaje = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!entradaMensaje.trim()) return;
