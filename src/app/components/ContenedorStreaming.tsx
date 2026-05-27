@@ -161,19 +161,17 @@ const procesarOfertaEntrante = async (oferta: any) => {
   const pc = new RTCPeerConnection(configuracionRTC);
   conexionPeer.current = pc;
 
-  // IMPORTANTE: Configurar ontrack ANTES de setRemoteDescription
+  // Solo usar ontrack (es el estándar actual)
   pc.ontrack = (event) => {
     console.log(" Track recibido:", event.streams[0]);
     if (videoRemotoRef.current && event.streams[0]) {
       videoRemotoRef.current.srcObject = event.streams[0];
-    }
-  };
-
-  // También manejar el caso de que no lleguen streams
-  pc.ontrack  = (event) => {
-    console.log(" Stream añadido (legacy):", event.stream);
-    if (videoRemotoRef.current) {
-      videoRemotoRef.current.srcObject = event.stream;
+      console.log(" Video remoto asignado correctamente");
+    } else {
+      console.warn(" No se pudo asignar el video remoto:", {
+        videoRef: !!videoRemotoRef.current,
+        stream: !!event.streams[0]
+      });
     }
   };
 
