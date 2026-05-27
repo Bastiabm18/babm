@@ -98,8 +98,9 @@ export default function ContenedorStreaming({
 
     await accionActualizarOferta(idTransmision, oferta);
 
-    pc.onicecandidate = async (event) => {
-      if (event.candidate == null) {
+pc.onicecandidate = async (event) => {
+      if (event.candidate === null) {
+        console.log("ICE Gathering completo en Transmisor. Guardando oferta final...");
         await accionActualizarOferta(idTransmision, pc.localDescription);
       }
     };
@@ -130,7 +131,12 @@ export default function ContenedorStreaming({
     const respuesta = await pc.createAnswer();
     await pc.setLocalDescription(respuesta);
 
-    await accionActualizarRespuesta(idTransmision, respuesta);
+  pc.onicecandidate = async (event) => {
+      if (event.candidate === null) {
+        console.log("ICE Gathering completo en Espectador. Guardando respuesta final...");
+        await accionActualizarRespuesta(idTransmision, pc.localDescription);
+      }
+    };
   };
 
   const manejarEnvioMensaje = async (e: React.FormEvent) => {
