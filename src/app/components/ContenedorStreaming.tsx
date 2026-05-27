@@ -69,6 +69,10 @@ useEffect(() => {
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'transmision_vivo', filter: `id=eq.${idTransmision}` },
         async (payload: any) => {
+              console.log(" Cambio detectado en transmision_vivo:", payload.new);
+          console.log("Rol actual:", rol);
+          console.log("¿Tiene oferta_sdp?", !!payload.new.oferta_sdp);
+          console.log("¿Tiene respuesta_sdp?", !!payload.new.respuesta_sdp);
           const pc = conexionPeer.current;
 
           if (rol === 'espectador' && payload.new.oferta_sdp) {
@@ -99,7 +103,7 @@ useEffect(() => {
     };
   }, [idTransmision, rol, supabase]);
   // --- LÓGICA DEL EMISOR (TRANSMISOR) ---
- const iniciarTransmision = async () => {
+const iniciarTransmision = async () => {
   setRol('transmisor');
   setEnVivo(true);
 
@@ -110,15 +114,22 @@ useEffect(() => {
   const pc = new RTCPeerConnection(configuracionRTC);
   conexionPeer.current = pc;
 
+  // Agregar tracks ANTES de crear oferta
   stream.getTracks().forEach((track) => pc.addTrack(track, stream));
+
+  pc.ontrack = (event) => {
+    console.log(" Transmisor recibió track (esto es normal en peer-to-peer):", event);
+  };
 
   const oferta = await pc.createOffer();
   await pc.setLocalDescription(oferta);
-
+  
+  console.log(" Oferta creada:", oferta);
   await accionActualizarOferta(idTransmision, oferta);
 
   pc.onicecandidate = async (event) => {
-    if (pc.localDescription) {
+    if (event.candidate && pc.localDescription) {
+      console.log(" ICE candidate enviado");
       const sdpPlano = JSON.parse(JSON.stringify(pc.localDescription));
       await accionActualizarOferta(idTransmision, sdpPlano);
     }
@@ -136,32 +147,51 @@ useEffect(() => {
     }
   };
 
- const procesarOfertaEntrante = async (oferta: any) => {
+const procesarOfertaEntrante = async (oferta: any) => {
+  // Evitar múltiples conexiones
   if (conexionPeer.current && conexionPeer.current.signalingState === "stable") {
     return;
+  }
+
+  // Cerrar conexión anterior si existe
+  if (conexionPeer.current) {
+    conexionPeer.current.close();
   }
 
   const pc = new RTCPeerConnection(configuracionRTC);
   conexionPeer.current = pc;
 
+  // IMPORTANTE: Configurar ontrack ANTES de setRemoteDescription
   pc.ontrack = (event) => {
+    console.log(" Track recibido:", event.streams[0]);
     if (videoRemotoRef.current && event.streams[0]) {
       videoRemotoRef.current.srcObject = event.streams[0];
     }
   };
 
-  await pc.setRemoteDescription(new RTCSessionDescription(oferta));
-  const respuesta = await pc.createAnswer();
-  await pc.setLocalDescription(respuesta);
-
-  await accionActualizarRespuesta(idTransmision, respuesta);
-
-  pc.onicecandidate = async (event) => {
-    if (pc.localDescription && pc.signalingState !== "closed") {
-      const sdpPlano = JSON.parse(JSON.stringify(pc.localDescription));
-      await accionActualizarRespuesta(idTransmision, sdpPlano);
+  // También manejar el caso de que no lleguen streams
+  pc.onaddstream = (event) => {
+    console.log(" Stream añadido (legacy):", event.stream);
+    if (videoRemotoRef.current) {
+      videoRemotoRef.current.srcObject = event.stream;
     }
   };
+
+  try {
+    await pc.setRemoteDescription(new RTCSessionDescription(oferta));
+    const respuesta = await pc.createAnswer();
+    await pc.setLocalDescription(respuesta);
+    await accionActualizarRespuesta(idTransmision, respuesta);
+
+    pc.onicecandidate = async (event) => {
+      if (event.candidate && pc.localDescription && pc.signalingState !== "closed") {
+        const sdpPlano = JSON.parse(JSON.stringify(pc.localDescription));
+        await accionActualizarRespuesta(idTransmision, sdpPlano);
+      }
+    };
+  } catch (error) {
+    console.error("Error procesando oferta:", error);
+  }
 };
   const manejarEnvioMensaje = async (e: React.FormEvent) => {
     e.preventDefault();
