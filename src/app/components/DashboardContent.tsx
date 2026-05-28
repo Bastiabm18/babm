@@ -74,7 +74,7 @@ interface MenuItem {
 // Lista de items del menú para el rol 'user'
 const userMenuItems: MenuItem[] = [
   { key: 'home', path: '/dashboard', icon: <FaHome />, role: ['user', 'admin'] },
-  { key:'Streaming',name: 'Streaming', path: '/dashboard/live', icon: <CiStreamOn />, role: [ 'admin'] },
+  { key:'Streaming', path: '/dashboard/live', icon: <CiStreamOn />, role: [ 'admin'] },
   {key: 'services', path: '/dashboard/servicios', icon: <RiCustomerService2Fill />, role: ['user', 'admin']},
   { key: 'posts', path: '/dashboard/publicacion', icon: <MdOutlinePostAdd />, role: ['user', 'admin'] }, // Ejemplo de item solo para admin
   { key: 'reviews', path: '/dashboard/opiniones', icon: <FaComment />, role: ['user', 'admin'] },
