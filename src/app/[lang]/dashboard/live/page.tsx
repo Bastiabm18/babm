@@ -3,7 +3,7 @@ import React from 'react';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import DashboardLayout from '@/app/components/DashboardLayout';
-import { getFaqs } from './actions';
+
 import LiveContent from './LiveContent';
 
 
