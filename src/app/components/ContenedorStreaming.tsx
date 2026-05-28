@@ -6,6 +6,7 @@ import { IoVideocam, IoPeople, IoSend, IoStopCircle } from 'react-icons/io5';
 import { Mensaje } from '@/types/admin';
 
 interface Props {
+  modo: 'transmisor' | 'espectador'; // UNICA PROPIEDAD NUEVA
   idTransmision: string;
   accionAsegurarSala: (id: string, titulo: string) => Promise<void>;
   accionIniciarVivo: (id: string) => Promise<void>;
@@ -25,6 +26,7 @@ function extraerSdpPlano(desc: RTCSessionDescriptionInit | null) {
 }
 
 export default function ContenedorStreaming({
+  modo, // RECIBIR LA PROP
   idTransmision,
   accionAsegurarSala,
   accionIniciarVivo,
@@ -33,13 +35,11 @@ export default function ContenedorStreaming({
   accionGuardarRespuesta,
   accionEnviarMensaje
 }: Props) {
-  const [rol, setRol] = useState<'transmisor' | 'espectador' | null>(null);
   const [enVivo, setEnVivo] = useState(false);
   const [mensajes, setMensajes] = useState<Mensaje[]>([]);
   const [inputTexto, setInputTexto] = useState('');
-  const [estado, setEstado] = useState('Esperando accion...');
+  const [estado, setEstado] = useState(modo === 'transmisor' ? 'Esperando accion...' : 'Esperando accion...');
   
-  // ID unico para este espectador en particular
   const [viewerId] = useState(() => `v_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`);
   const [nombreUsuario] = useState(`User_${Math.floor(Math.random() * 1000)}`);
 
@@ -49,12 +49,15 @@ export default function ContenedorStreaming({
   const pcEspectadorRef = useRef<RTCPeerConnection | null>(null);
 
   const supabase = getSupabaseBrowser();
+  
+  // USAR LA PROP COMO ROL FIJO
+  const rol = modo;
 
   useEffect(() => {
     accionAsegurarSala(idTransmision, "Sala Multiusuario");
   }, []);
 
-    // Fix para pantalla negra del transmisor
+  // Fix para pantalla negra del transmisor
   useEffect(() => {
     if (rol === 'transmisor' && enVivo && videoRef.current && streamLocalRef.current) {
       console.log('[TRANSMISOR] Asignando camara al elemento de video');
@@ -85,7 +88,6 @@ export default function ContenedorStreaming({
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'viewer_answers', filter: `transmision_id=eq.${idTransmision}` }, async (payload) => {
         const nuevoViewerId = payload.new.viewer_id;
         
-        // Evitar procesar si ya le estamos enviando video
         if (peersActivosRef.current.has(nuevoViewerId)) return;
 
         console.log('[TRANSMISOR] Nuevo espectador detectado. Creando oferta para:', nuevoViewerId);
@@ -95,18 +97,15 @@ export default function ContenedorStreaming({
           const pc = new RTCPeerConnection(RTC_CONFIG);
           peersActivosRef.current.set(nuevoViewerId, pc);
 
-          // Agregar pistas de nuestra camara a ESTA conexion especifica
           streamLocalRef.current!.getTracks().forEach(track => {
             console.log('[TRANSMISOR] Agregando track:', track.kind);
             pc.addTrack(track, streamLocalRef.current!);
           });
 
-          // Crear oferta UNICA para este espectador
           const oferta = await pc.createOffer();
           await pc.setLocalDescription(oferta);
           console.log('[TRANSMISOR] Oferta local creada. Esperando ICE candidates...');
 
-          // Esperar a que se recolecten todos los candidates
           const ofertaCompleta = await new Promise<RTCSessionDescriptionInit | null>((resolve) => {
             if (pc.iceGatheringState === 'complete') return resolve(pc.localDescription);
             
@@ -126,7 +125,6 @@ export default function ContenedorStreaming({
             console.log('[TRANSMISOR] Oferta guardada en BD para:', nuevoViewerId);
           }
 
-          // Escuchar la respuesta de ESTE espectador
           pc.oniceconnectionstatechange = () => {
             console.log(`[TRANSMISOR] Estado ICE para ${nuevoViewerId}:`, pc.iceConnectionState);
             if (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed') {
@@ -144,17 +142,15 @@ export default function ContenedorStreaming({
           peersActivosRef.current.delete(nuevoViewerId);
         }
       })
-      // Tambien necesitamos escuchar cuando el espectador actualiza su respuesta
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'viewer_answers', filter: `transmision_id=eq.${idTransmision}` }, async (payload) => {
         const viewerIdRespuesta = payload.new.viewer_id;
         const respuestaSdp = payload.new.respuesta_sdp;
         
-        if (!respuestaSdp) return; // Ignorar si no tiene respuesta aun
+        if (!respuestaSdp) return;
         
         const pc = peersActivosRef.current.get(viewerIdRespuesta);
         if (!pc) return;
         
-        // Solo procesar si estamos en estado de espera
         if (pc.signalingState === 'have-local-offer') {
           console.log('[TRANSMISOR] Respuesta recibida de:', viewerIdRespuesta);
           try {
@@ -186,7 +182,7 @@ export default function ContenedorStreaming({
           filter: `viewer_id=eq.${viewerId}` 
       }, async (payload) => {
         const ofertaSdp = payload.new.oferta_sdp;
-        if (!ofertaSdp || pcEspectadorRef.current) return; // Si ya hay conexion, ignorar
+        if (!ofertaSdp || pcEspectadorRef.current) return;
 
         console.log('[ESPECTADOR] Oferta recibida del transmisor!');
         setEstado('Procesando senal...');
@@ -195,15 +191,13 @@ export default function ContenedorStreaming({
           const pc = new RTCPeerConnection(RTC_CONFIG);
           pcEspectadorRef.current = pc;
 
-             pc.ontrack = (event) => {
+          pc.ontrack = (event) => {
             console.log('[ESPECTADOR] Track remoto recibido!', event.streams[0]);
             if (videoRef.current && event.streams[0]) {
               videoRef.current.srcObject = event.streams[0];
-              // No llamamos a .play() manualmente. El atributo 'autoPlay' del <video> lo maneja
-              // y evita el error "play() request was interrupted by a new load request"
               setEstado('Reproduciendo senal...');
-                }
-              };
+            }
+          };
 
           pc.oniceconnectionstatechange = () => {
             console.log('[ESPECTADOR] Estado ICE:', pc.iceConnectionState);
@@ -251,15 +245,10 @@ export default function ContenedorStreaming({
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       streamLocalRef.current = stream;
       
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.play().catch(e => console.error('Error autoplay transmisor:', e));
-      }
-
+      // No asignamos el srcObject aqui, lo hace el useEffect
       console.log('[TRANSMISOR] Camara obtenida. Iniciando sala...');
       await accionIniciarVivo(idTransmision);
 
-      setRol('transmisor');
       setEnVivo(true);
       setEstado('En vivo - Esperando espectadores...');
     } catch (err: any) {
@@ -271,17 +260,14 @@ export default function ContenedorStreaming({
   const unirseComoEspectador = async () => {
     try {
       setEstado('Registrandome en el servidor...');
-      setRol('espectador');
       setEnVivo(true);
       
-      // Avisar al transmisor que estoy aqui
       await accionRegistrarEspectador(idTransmision, viewerId);
       console.log('[ESPECTADOR] Registro enviado. Mi ID es:', viewerId);
     } catch (err: any) {
       console.error('[ESPECTADOR] Error:', err);
       setEstado(`Error: ${err.message}`);
       setEnVivo(false);
-      setRol(null);
     }
   };
 
@@ -303,8 +289,7 @@ export default function ContenedorStreaming({
     if (videoRef.current) videoRef.current.srcObject = null;
     
     setEnVivo(false);
-    setRol(null);
-    setEstado('Esperando accion...');
+    setEstado(modo === 'transmisor' ? 'Esperando accion...' : 'Esperando accion...');
   };
 
   const enviarMsg = async (e: React.FormEvent) => {
@@ -323,7 +308,7 @@ export default function ContenedorStreaming({
           <div className="flex items-center gap-3">
             <span className={`h-3 w-3 rounded-full ${enVivo ? 'bg-red-600 animate-pulse' : 'bg-neutral-500'}`} />
             <h2 className="font-bold text-white tracking-wide uppercase text-sm">
-              {enVivo ? 'SENAL EN VIVO' : 'STREAMING WEBRTC'}
+              {enVivo ? 'SENAL EN VIVO' : 'STREAMING '}
             </h2>
           </div>
           {enVivo && (
@@ -335,15 +320,20 @@ export default function ContenedorStreaming({
           {!enVivo ? (
             <div className="text-center p-8 flex flex-col gap-6 max-w-md z-10">
               <p className="text-neutral-400 text-sm">
-                Transmision P2P dedicada por espectador.
+                {modo === 'transmisor' ? 'Presiona para iniciar tu camara y transmitir.' : 'Presiona para conectarte a la senal en vivo.'}
               </p>
               <div className="flex gap-4 justify-center">
-                <button onClick={iniciarTransmision} className="flex items-center gap-2 px-6 py-3 font-bold rounded-xl text-sm cursor-pointer bg-red-600 hover:bg-red-700 text-white transition-colors">
-                  <IoVideocam /> Transmitir
-                </button>
-                <button onClick={unirseComoEspectador} className="flex items-center gap-2 px-6 py-3 font-bold rounded-xl text-sm cursor-pointer bg-neutral-700 hover:bg-neutral-600 text-white transition-colors">
-                  <IoPeople /> Ver Senal
-                </button>
+                {/* UNICO CAMBIO VISUAL: Condicionar los botones a la prop 'modo' */}
+                {modo === 'transmisor' && (
+                  <button onClick={iniciarTransmision} className="flex items-center gap-2 px-6 py-3 font-bold rounded-xl text-sm cursor-pointer bg-red-600 hover:bg-red-700 text-white transition-colors">
+                    <IoVideocam /> Transmitir
+                  </button>
+                )}
+                {modo === 'espectador' && (
+                  <button onClick={unirseComoEspectador} className="flex items-center gap-2 px-6 py-3 font-bold rounded-xl text-sm cursor-pointer bg-neutral-700 hover:bg-neutral-600 text-white transition-colors">
+                    <IoPeople /> Ver Senal
+                  </button>
+                )}
               </div>
             </div>
           ) : (

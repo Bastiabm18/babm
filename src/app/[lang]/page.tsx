@@ -36,6 +36,7 @@ export default function Home() {
       </section>
       <section className='flex items-center justify-center w-[95vw]'>
 <ContenedorStreaming 
+  modo="espectador"
   idTransmision={idSalaPruebas} 
   accionAsegurarSala={asegurarSala}
   accionIniciarVivo={iniciarEstadoVivo}

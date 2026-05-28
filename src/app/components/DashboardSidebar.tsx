@@ -10,6 +10,8 @@ import { AiFillSetting } from 'react-icons/ai';
 import {MdOutlinePostAdd} from "react-icons/md";
 import { RiCustomerService2Fill } from "react-icons/ri";
 import { BsBackspace } from "react-icons/bs";
+import { CiStreamOn } from "react-icons/ci";
+
 
 interface MenuItem {
   name: string;
@@ -30,9 +32,9 @@ interface SidebarProps {
 // Lista completa de todos los items posibles del menú
 const allMenuItems: MenuItem[] = [
   // Items para todos los usuarios
-  { name: 'Inicio', path: '/dashboard', icon: <FaHome />, role: ['user', 'admin'] },
-  { name: 'Mi Perfil', path: '/dashboard/profile', icon: <FaUserCircle />, role: ['user', 'admin'] },
-  { name:'Publicaciones', path:'/dashboard/publicacion',icon:<MdOutlinePostAdd/>,role:['user', 'admin']}, 
+  { name: 'Inicio', path: '/dashboard', icon: <FaHome />, role: [ 'admin'] },
+  { name: 'Streaming', path: '/dashboard/live', icon: <CiStreamOn />, role: [ 'admin'] },
+  { name:'Publicaciones', path:'/dashboard/publicacion',icon:<MdOutlinePostAdd/>,role:[ 'admin']}, 
   {name:'Servicios', path:'/dashboard/servicios', icon:<RiCustomerService2Fill/>, role:['user', 'admin']},
   { name: 'Opiniones', path: '/dashboard/opiniones', icon: <FaComment />, role: ['user', 'admin'] },
   { name: 'Promociones', path: '/dashboard/promos', icon: <FaChartBar />, role: ['user', 'admin'] },

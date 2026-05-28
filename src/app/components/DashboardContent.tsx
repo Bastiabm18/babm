@@ -10,6 +10,8 @@ import { AiFillSetting } from 'react-icons/ai';
 import { BsBackspace } from "react-icons/bs";
 import { RiCustomerService2Fill } from "react-icons/ri";
 
+import { CiStreamOn } from "react-icons/ci";
+
 // Define la estructura de las traducciones para los items del menú
 type MenuTranslations = {
   [key: string]: { name: string };
@@ -18,7 +20,7 @@ type MenuTranslations = {
 const translations: Record<string, MenuTranslations> = {
   en: {
     home: { name: 'Home' },
-    profile: { name: 'My Profile' },
+    Streaming: { name: 'Streaming' },
     services: { name: 'Services' },
     reviews: { name: 'Reviews' },
     promos: { name: 'Promotions' },
@@ -29,7 +31,7 @@ const translations: Record<string, MenuTranslations> = {
   },
   es: {
     home: { name: 'Inicio' },
-    profile: { name: 'Mi Perfil' },
+    Streaming: { name: 'Transmitir' },
     services: { name: 'Servicios' },
     reviews: { name: 'Opiniones' },
     promos: { name: 'Promociones' },
@@ -40,7 +42,7 @@ const translations: Record<string, MenuTranslations> = {
   },
   de: {
     home: { name: 'Startseite' },
-    profile: { name: 'Mein Profil' },
+    Streaming: { name: 'Mein Streaming' },
     services: { name: 'Dienstleistungen' },
     reviews: { name: 'Bewertungen' },
     promos: { name: 'Angebote' },
@@ -51,7 +53,7 @@ const translations: Record<string, MenuTranslations> = {
   },
   zh: {
     home: { name: '首页' },
-    profile: { name: '我的个人资料' },
+    Streaming: { name: '' },
     services: { name: '服务' },
     reviews: { name: '评价' },
     promos: { name: '促销活动' },
@@ -72,7 +74,7 @@ interface MenuItem {
 // Lista de items del menú para el rol 'user'
 const userMenuItems: MenuItem[] = [
   { key: 'home', path: '/dashboard', icon: <FaHome />, role: ['user', 'admin'] },
-  { key: 'profile', path: '/dashboard/profile', icon: <FaUserCircle />, role: ['user', 'admin'] },
+  { key:'Streaming',name: 'Streaming', path: '/dashboard/live', icon: <CiStreamOn />, role: [ 'admin'] },
   {key: 'services', path: '/dashboard/servicios', icon: <RiCustomerService2Fill />, role: ['user', 'admin']},
   { key: 'posts', path: '/dashboard/publicacion', icon: <MdOutlinePostAdd />, role: ['user', 'admin'] }, // Ejemplo de item solo para admin
   { key: 'reviews', path: '/dashboard/opiniones', icon: <FaComment />, role: ['user', 'admin'] },
