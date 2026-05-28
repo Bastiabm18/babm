@@ -12,6 +12,7 @@ import { Sponsors } from '../components/SponsorCarousel';
 import AboutUs from '../components/About';
 import HeroSlider from '../components/HeroSlider';
 import ContenedorStreaming from '../components/ContenedorStreaming';
+import LogoBabm from '../components/LogoBabm';
 import { 
   asegurarSala, 
   iniciarEstadoVivo, 
@@ -34,7 +35,8 @@ export default function Home() {
       <section className='flex items-center justify-center w-[95vw] '>
       <CodeSimulator/>
       </section>
-      <section className='flex items-center justify-center w-[95vw]'>
+      <section className='flex flex-row items-center justify-center w-[95vw] gap-4 lg:gap-8 xl:gap-12'>
+            <LogoBabm />
 <ContenedorStreaming 
   modo="espectador"
   idTransmision={idSalaPruebas} 
@@ -45,6 +47,7 @@ export default function Home() {
   accionGuardarRespuesta={guardarRespuestaEspectador}
   accionEnviarMensaje={enviarMensaje}
 />
+    <LogoBabm />
       </section>
       <section id="proyectos" className='flex items-center justify-center w-[95vw]'>
         <ProjectsGrid />

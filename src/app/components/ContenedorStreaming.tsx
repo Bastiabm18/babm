@@ -357,37 +357,50 @@ export default function ContenedorStreaming({
         )}
       </div>
 
-      <div className="flex flex-col h-[550px] rounded-2xl overflow-hidden bg-white/50 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-800">
-        <div className="p-4 border-b border-neutral-300 dark:border-neutral-800 font-bold text-sm tracking-wide text-neutral-700 dark:text-neutral-300 uppercase">
-          Chat
-        </div>
+<div className="flex flex-col h-[550px] rounded-2xl overflow-hidden bg-white/50 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-800">
+  <div className="p-4 border-b border-neutral-300 dark:border-neutral-800 font-bold text-sm tracking-wide text-neutral-700 dark:text-neutral-300 uppercase">
+    Chat
+  </div>
 
-        <div className="flex-1 p-4 overflow-y-auto space-y-3 text-sm">
-          {mensajes.length === 0 ? (
-            <p className="text-neutral-400 text-center italic mt-10 text-xs">Sin mensajes...</p>
-          ) : (
-            mensajes.map((msg) => (
-              <div key={msg.id} className="p-2.5 rounded-xl bg-neutral-200/50 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700">
-                <span className="font-bold text-red-500 dark:text-orange-400 text-xs block mb-0.5">{msg.nombre_usuario}</span>
-                <p className="text-neutral-800 dark:text-neutral-200 leading-relaxed break-words text-xs">{msg.mensaje}</p>
-              </div>
-            ))
-          )}
-        </div>
+  <div className="flex-1 p-4 overflow-y-auto space-y-3 text-sm relative"
+       style={{
+         backgroundImage: `url('/babm_new_bg.png')`,
+         backgroundSize: '100px',
+         backgroundRepeat: 'no-repeat',
+         backgroundPosition: 'center',
+         backgroundOpacity: 0.05
+       }}>
+    
+    {/* Overlay para que los mensajes sean legibles */}
+    <div className="absolute inset-0 bg-white/50 dark:bg-neutral-900/70 pointer-events-none"></div>
+    
+    <div className="relative z-10">
+      {mensajes.length === 0 ? (
+        <p className="text-neutral-400 text-center italic mt-10 text-xs">Sin mensajes...</p>
+      ) : (
+        mensajes.map((msg) => (
+          <div key={msg.id} className="p-2.5 rounded-xl bg-neutral-200/80 dark:bg-neutral-800/90 border border-neutral-300 dark:border-neutral-700 backdrop-blur-sm">
+            <span className="font-bold text-red-500 dark:text-orange-400 text-xs block mb-0.5">{msg.nombre_usuario}</span>
+            <p className="text-neutral-800 dark:text-neutral-200 leading-relaxed break-words text-xs">{msg.mensaje}</p>
+          </div>
+        ))
+      )}
+    </div>
+  </div>
 
-        <form onSubmit={enviarMsg} className="p-3 border-t border-neutral-300 dark:border-neutral-800 flex gap-2 bg-white/80 dark:bg-black/40">
-          <input
-            type="text"
-            placeholder="Mensaje..."
-            value={inputTexto}
-            onChange={(e) => setInputTexto(e.target.value)}
-            className="flex-1 rounded-xl px-3 py-2 text-xs bg-neutral-100 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 focus:outline-none focus:border-red-500 text-neutral-900 dark:text-neutral-50"
-          />
-          <button type="submit" className="p-2.5 text-white rounded-xl transition-colors cursor-pointer bg-red-600 hover:bg-red-700">
-            <IoSend size={14} />
-          </button>
-        </form>
-      </div>
+  <form onSubmit={enviarMsg} className="p-3 border-t border-neutral-300 dark:border-neutral-800 flex gap-2 bg-white/80 dark:bg-black/40">
+    <input
+      type="text"
+      placeholder="Mensaje..."
+      value={inputTexto}
+      onChange={(e) => setInputTexto(e.target.value)}
+      className="flex-1 rounded-xl px-3 py-2 text-xs bg-neutral-100 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 focus:outline-none focus:border-red-500 text-neutral-900 dark:text-neutral-50"
+    />
+    <button type="submit" className="p-2.5 text-white rounded-xl transition-colors cursor-pointer bg-red-600 hover:bg-red-700">
+      <IoSend size={14} />
+    </button>
+  </form>
+</div>
 
     </div>
   );
