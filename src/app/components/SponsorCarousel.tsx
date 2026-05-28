@@ -16,9 +16,9 @@ const sponsorsTexts = {
 
 // Array de logos
 const logos = [
-  { src: '/catiray.png', alt: 'Catiray', url: '#', name: 'Catiray FC' },
+  { src: '/catiray.png', alt: 'Catiray', url: 'https://catiray.vercel.app/', name: 'FC Catiray' },
   { src: '/carrera.png', alt: 'Carrera', url: '#', name: 'Union Los Carrera' },
-  { src: '/spaolimpo.ico', alt: 'Olimpo Spa', url: '#', name: 'Spa Olimpo' },
+  { src: '/spaolimpo.ico', alt: 'Olimpo Spa', url: 'https://spaolimpo.vercel.app/', name: 'Spa Olimpo' },
 ];
 
 // Animaciones
