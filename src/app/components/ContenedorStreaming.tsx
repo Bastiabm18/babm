@@ -5,292 +5,395 @@ import { getSupabaseBrowser } from '@/lib/supabase/supabase-client';
 import { IoVideocam, IoPeople, IoSend, IoStopCircle } from 'react-icons/io5';
 import { Mensaje } from '@/types/admin';
 
-interface ContenedorStreamingProps {
+interface Props {
   idTransmision: string;
   accionAsegurarSala: (id: string, titulo: string) => Promise<void>;
-  accionActualizarOferta: (id: string, oferta: any) => Promise<void>;
-  accionObtenerOferta: (id: string) => Promise<any>;
-  accionActualizarRespuesta: (id: string, respuesta: any) => Promise<void>;
+  accionIniciarVivo: (id: string) => Promise<void>;
+  accionRegistrarEspectador: (tid: string, vid: string) => Promise<void>;
+  accionGuardarOferta: (tid: string, vid: string, oferta: any) => Promise<void>;
+  accionGuardarRespuesta: (tid: string, vid: string, res: any) => Promise<void>;
   accionEnviarMensaje: (id: string, usuario: string, texto: string) => Promise<{ success: boolean }>;
+}
+
+const RTC_CONFIG: RTCConfiguration = {
+  iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
+};
+
+function extraerSdpPlano(desc: RTCSessionDescriptionInit | null) {
+  if (!desc) return null;
+  return { type: desc.type, sdp: desc.sdp };
 }
 
 export default function ContenedorStreaming({
   idTransmision,
   accionAsegurarSala,
-  accionActualizarOferta,
-  accionObtenerOferta,
-  accionActualizarRespuesta,
+  accionIniciarVivo,
+  accionRegistrarEspectador,
+  accionGuardarOferta,
+  accionGuardarRespuesta,
   accionEnviarMensaje
-}: ContenedorStreamingProps) {
+}: Props) {
   const [rol, setRol] = useState<'transmisor' | 'espectador' | null>(null);
   const [enVivo, setEnVivo] = useState(false);
   const [mensajes, setMensajes] = useState<Mensaje[]>([]);
-  const [entradaMensaje, setEntradaMensaje] = useState('');
-  const [nombreUsuario] = useState(`Usuario_${Math.floor(Math.random() * 1000)}`);
+  const [inputTexto, setInputTexto] = useState('');
+  const [estado, setEstado] = useState('Esperando accion...');
   
-   const [respuestaEnviada, setRespuestaEnviada] = useState(false);
+  // ID unico para este espectador en particular
+  const [viewerId] = useState(() => `v_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`);
+  const [nombreUsuario] = useState(`User_${Math.floor(Math.random() * 1000)}`);
 
-  const videoLocalRef = useRef<HTMLVideoElement>(null);
-  const videoRemotoRef = useRef<HTMLVideoElement>(null);
-  const conexionPeer = useRef<RTCPeerConnection | null>(null);
-  const flujoLocal = useRef<MediaStream | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamLocalRef = useRef<MediaStream | null>(null);
+  const peersActivosRef = useRef<Map<string, RTCPeerConnection>>(new Map());
+  const pcEspectadorRef = useRef<RTCPeerConnection | null>(null);
 
   const supabase = getSupabaseBrowser();
-const configuracionRTC = {
-  iceServers: [
-    { urls: 'stun:stun.anyfirewall.com:3478' },
-    {
-      urls: 'turn:turn.anyfirewall.com:3478',
-      username: 'anyfirewall', // Credenciales públicas de OpenRelay
-      credential: 'anyfirewall'
-    }
-  ],
-};
 
-  // 1. Asegurar la existencia de la sala en Supabase de forma asíncrona al montar
   useEffect(() => {
-    accionAsegurarSala(idTransmision, "Transmisión en Vivo - Portafolio");
-  }, [idTransmision, accionAsegurarSala]);
+    accionAsegurarSala(idTransmision, "Sala Multiusuario");
+  }, []);
 
-  // 2. Controladores en tiempo real (Suscripciones puras)
-useEffect(() => {
-    const canalChat = supabase
+    // Fix para pantalla negra del transmisor
+  useEffect(() => {
+    if (rol === 'transmisor' && enVivo && videoRef.current && streamLocalRef.current) {
+      console.log('[TRANSMISOR] Asignando camara al elemento de video');
+      videoRef.current.srcObject = streamLocalRef.current;
+    }
+  }, [enVivo, rol]);
+
+  // Suscripcion al chat
+  useEffect(() => {
+    if (!enVivo) return;
+    const canal = supabase
       .channel(`chat-${idTransmision}`)
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'mensaje_transmision', filter: `transmision_id=eq.${idTransmision}` },
-        (payload) => {
-          setMensajes((prev) => [...prev, payload.new as Mensaje]);
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'mensaje_transmision', filter: `transmision_id=eq.${idTransmision}` }, (payload) => {
+        setMensajes(prev => [...prev, payload.new as Mensaje]);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(canal); };
+  }, [enVivo]);
+
+  // Logica del TRANSMISOR: Escuchar nuevos espectadores
+  useEffect(() => {
+    if (rol !== 'transmisor' || !enVivo || !streamLocalRef.current) return;
+    
+    console.log('[TRANSMISOR] Suscrito a nuevos espectadores');
+
+    const canal = supabase
+      .channel(`nuevos-viewers-${idTransmision}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'viewer_answers', filter: `transmision_id=eq.${idTransmision}` }, async (payload) => {
+        const nuevoViewerId = payload.new.viewer_id;
+        
+        // Evitar procesar si ya le estamos enviando video
+        if (peersActivosRef.current.has(nuevoViewerId)) return;
+
+        console.log('[TRANSMISOR] Nuevo espectador detectado. Creando oferta para:', nuevoViewerId);
+        setEstado(`Conectando a nuevo espectador...`);
+
+        try {
+          const pc = new RTCPeerConnection(RTC_CONFIG);
+          peersActivosRef.current.set(nuevoViewerId, pc);
+
+          // Agregar pistas de nuestra camara a ESTA conexion especifica
+          streamLocalRef.current!.getTracks().forEach(track => {
+            console.log('[TRANSMISOR] Agregando track:', track.kind);
+            pc.addTrack(track, streamLocalRef.current!);
+          });
+
+          // Crear oferta UNICA para este espectador
+          const oferta = await pc.createOffer();
+          await pc.setLocalDescription(oferta);
+          console.log('[TRANSMISOR] Oferta local creada. Esperando ICE candidates...');
+
+          // Esperar a que se recolecten todos los candidates
+          const ofertaCompleta = await new Promise<RTCSessionDescriptionInit | null>((resolve) => {
+            if (pc.iceGatheringState === 'complete') return resolve(pc.localDescription);
+            
+            const timeout = setTimeout(() => resolve(pc.localDescription), 4000);
+            pc.onicecandidate = (e) => {
+              if (e.candidate === null) {
+                clearTimeout(timeout);
+                console.log('[TRANSMISOR] ICE Gathering completo.');
+                resolve(pc.localDescription);
+              }
+            };
+          });
+
+          if (ofertaCompleta) {
+            const ofertaPlana = extraerSdpPlano(ofertaCompleta);
+            await accionGuardarOferta(idTransmision, nuevoViewerId, ofertaPlana);
+            console.log('[TRANSMISOR] Oferta guardada en BD para:', nuevoViewerId);
+          }
+
+          // Escuchar la respuesta de ESTE espectador
+          pc.oniceconnectionstatechange = () => {
+            console.log(`[TRANSMISOR] Estado ICE para ${nuevoViewerId}:`, pc.iceConnectionState);
+            if (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed') {
+              setEstado(`En vivo - ${peersActivosRef.current.size} espectador(es)`);
+            }
+            if (pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'disconnected') {
+              peersActivosRef.current.delete(nuevoViewerId);
+              pc.close();
+              setEstado(`En vivo - ${peersActivosRef.current.size} espectador(es)`);
+            }
+          };
+
+        } catch (err) {
+          console.error('[TRANSMISOR] Error creando conexion:', err);
+          peersActivosRef.current.delete(nuevoViewerId);
         }
-      )
+      })
+      // Tambien necesitamos escuchar cuando el espectador actualiza su respuesta
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'viewer_answers', filter: `transmision_id=eq.${idTransmision}` }, async (payload) => {
+        const viewerIdRespuesta = payload.new.viewer_id;
+        const respuestaSdp = payload.new.respuesta_sdp;
+        
+        if (!respuestaSdp) return; // Ignorar si no tiene respuesta aun
+        
+        const pc = peersActivosRef.current.get(viewerIdRespuesta);
+        if (!pc) return;
+        
+        // Solo procesar si estamos en estado de espera
+        if (pc.signalingState === 'have-local-offer') {
+          console.log('[TRANSMISOR] Respuesta recibida de:', viewerIdRespuesta);
+          try {
+            await pc.setRemoteDescription(new RTCSessionDescription(respuestaSdp));
+            console.log('[TRANSMISOR] Conexion P2P establecida con:', viewerIdRespuesta);
+          } catch (err) {
+            console.error('[TRANSMISOR] Error aplicando respuesta:', err);
+          }
+        }
+      })
       .subscribe();
 
+    return () => { supabase.removeChannel(canal); };
+  }, [rol, enVivo]);
 
-const canalVideo = supabase
-  .channel(`video-${idTransmision}`)
-  .on(
-    'postgres_changes',
-    { event: 'UPDATE', schema: 'public', table: 'transmision_vivo', filter: `id=eq.${idTransmision}` },
-    async (payload: any) => {
-      const pc = conexionPeer.current;
+  // Logica del ESPECTADOR: Escuchar la oferta que el transmisor nos dedica
+  useEffect(() => {
+    if (rol !== 'espectador' || !enVivo) return;
 
-      if (rol === 'espectador' && payload.new.oferta_sdp && !respuestaEnviada) {
-        setRespuestaEnviada(true);
-        await procesarOfertaEntrante(payload.new.oferta_sdp);
-      }
-      
-      if (rol === 'transmisor' && payload.new.respuesta_sdp && pc && !pc.remoteDescription) {
+    console.log('[ESPECTADOR] Suscrito a mi canal privado de oferta...');
+    setEstado('Esperando que el transmisor genere mi oferta...');
+
+    const canal = supabase
+      .channel(`mi-oferta-${viewerId}`)
+      .on('postgres_changes', { 
+          event: 'UPDATE', 
+          schema: 'public', 
+          table: 'viewer_answers', 
+          filter: `viewer_id=eq.${viewerId}` 
+      }, async (payload) => {
+        const ofertaSdp = payload.new.oferta_sdp;
+        if (!ofertaSdp || pcEspectadorRef.current) return; // Si ya hay conexion, ignorar
+
+        console.log('[ESPECTADOR] Oferta recibida del transmisor!');
+        setEstado('Procesando senal...');
+
         try {
-          await pc.setRemoteDescription(new RTCSessionDescription(payload.new.respuesta_sdp));
+          const pc = new RTCPeerConnection(RTC_CONFIG);
+          pcEspectadorRef.current = pc;
+
+             pc.ontrack = (event) => {
+            console.log('[ESPECTADOR] Track remoto recibido!', event.streams[0]);
+            if (videoRef.current && event.streams[0]) {
+              videoRef.current.srcObject = event.streams[0];
+              // No llamamos a .play() manualmente. El atributo 'autoPlay' del <video> lo maneja
+              // y evita el error "play() request was interrupted by a new load request"
+              setEstado('Reproduciendo senal...');
+                }
+              };
+
+          pc.oniceconnectionstatechange = () => {
+            console.log('[ESPECTADOR] Estado ICE:', pc.iceConnectionState);
+            if (pc.iceConnectionState === 'failed') setEstado('Fallo la conexion ICE');
+          };
+
+          await pc.setRemoteDescription(new RTCSessionDescription(ofertaSdp));
+          const respuesta = await pc.createAnswer();
+          await pc.setLocalDescription(respuesta);
+          
+          console.log('[ESPECTADOR] Respuesta local creada. Esperando ICE...');
+
+          const respuestaCompleta = await new Promise<RTCSessionDescriptionInit | null>((resolve) => {
+            if (pc.iceGatheringState === 'complete') return resolve(pc.localDescription);
+            const timeout = setTimeout(() => resolve(pc.localDescription), 4000);
+            pc.onicecandidate = (e) => {
+              if (e.candidate === null) {
+                clearTimeout(timeout);
+                console.log('[ESPECTADOR] ICE Gathering completo.');
+                resolve(pc.localDescription);
+              }
+            };
+          });
+
+          if (respuestaCompleta) {
+            const respuestaPlana = extraerSdpPlano(respuestaCompleta);
+            await accionGuardarRespuesta(idTransmision, viewerId, respuestaPlana);
+            console.log('[ESPECTADOR] Respuesta enviada al transmisor.');
+            setEstado('Conexion establecida. Esperando video...');
+          }
+
         } catch (err) {
-          console.error("Error seteando remote description:", err);
+          console.error('[ESPECTADOR] Error procesando oferta:', err);
+          setEstado('Error procesando senal.');
         }
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(canal); };
+  }, [rol, enVivo, viewerId]);
+
+  const iniciarTransmision = async () => {
+    try {
+      setEstado('Solicitando camara...');
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      streamLocalRef.current = stream;
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.play().catch(e => console.error('Error autoplay transmisor:', e));
       }
-    }
-  )
-  .subscribe();
 
-    return () => {
-      canalChat.unsubscribe();
-      canalVideo.unsubscribe();
-      if (flujoLocal.current) flujoLocal.current.getTracks().forEach(track => track.stop());
-    };
-  }, [idTransmision, rol, supabase]);
-  // --- LÓGICA DEL EMISOR (TRANSMISOR) ---
-const iniciarTransmision = async () => {
-  setRol('transmisor');
-  setEnVivo(true);
+      console.log('[TRANSMISOR] Camara obtenida. Iniciando sala...');
+      await accionIniciarVivo(idTransmision);
 
-  const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-  flujoLocal.current = stream;
-  if (videoLocalRef.current) videoLocalRef.current.srcObject = stream;
-
-  const pc = new RTCPeerConnection(configuracionRTC);
-  conexionPeer.current = pc;
-
-  // Agregar tracks ANTES de crear oferta
-  stream.getTracks().forEach((track) => pc.addTrack(track, stream));
-
-  pc.ontrack = (event) => {
-    console.log(" Transmisor recibió track (esto es normal en peer-to-peer):", event);
-  };
-
-  const oferta = await pc.createOffer();
-  await pc.setLocalDescription(oferta);
-  
-  console.log(" Oferta creada:", oferta);
-  await accionActualizarOferta(idTransmision, oferta);
-
-  pc.onicecandidate = async (event) => {
-    if (event.candidate && pc.localDescription) {
-      console.log(" ICE candidate enviado");
-      const sdpPlano = JSON.parse(JSON.stringify(pc.localDescription));
-      await accionActualizarOferta(idTransmision, sdpPlano);
-    }
-  };
-};
-
-  // --- LÓGICA DEL RECEPTOR (ESPECTADOR) ---
-const unirseTransmision = async () => {
-  setRol('espectador');
-  setEnVivo(true);
-
-  const ofertaSdp = await accionObtenerOferta(idTransmision);
-  
-  if (ofertaSdp) {
-    setRespuestaEnviada(true);
-    await procesarOfertaEntrante(ofertaSdp);
-  }
-};
-
-const procesarOfertaEntrante = async (oferta: any) => {
-  // Evitar múltiples conexiones
-  if (conexionPeer.current && conexionPeer.current.signalingState === "stable") {
-    return;
-  }
-
-  // Cerrar conexión anterior si existe
-  if (conexionPeer.current) {
-    conexionPeer.current.close();
-  }
-
-  const pc = new RTCPeerConnection(configuracionRTC);
-  conexionPeer.current = pc;
-
-  // Solo usar ontrack (es el estándar actual)
-  pc.ontrack = (event) => {
-    console.log(" Track recibido:", event.streams[0]);
-    if (videoRemotoRef.current && event.streams[0]) {
-      videoRemotoRef.current.srcObject = event.streams[0];
-      console.log(" Video remoto asignado correctamente");
-    } else {
-      console.warn(" No se pudo asignar el video remoto:", {
-        videoRef: !!videoRemotoRef.current,
-        stream: !!event.streams[0]
-      });
+      setRol('transmisor');
+      setEnVivo(true);
+      setEstado('En vivo - Esperando espectadores...');
+    } catch (err: any) {
+      console.error('[TRANSMISOR] Error:', err);
+      setEstado(`Error: ${err.message}`);
     }
   };
 
-  try {
-    await pc.setRemoteDescription(new RTCSessionDescription(oferta));
-    const respuesta = await pc.createAnswer();
-    await pc.setLocalDescription(respuesta);
-    await accionActualizarRespuesta(idTransmision, respuesta);
+  const unirseComoEspectador = async () => {
+    try {
+      setEstado('Registrandome en el servidor...');
+      setRol('espectador');
+      setEnVivo(true);
+      
+      // Avisar al transmisor que estoy aqui
+      await accionRegistrarEspectador(idTransmision, viewerId);
+      console.log('[ESPECTADOR] Registro enviado. Mi ID es:', viewerId);
+    } catch (err: any) {
+      console.error('[ESPECTADOR] Error:', err);
+      setEstado(`Error: ${err.message}`);
+      setEnVivo(false);
+      setRol(null);
+    }
+  };
 
-    pc.onicecandidate = async (event) => {
-      if (event.candidate && pc.localDescription && pc.signalingState !== "closed") {
-        const sdpPlano = JSON.parse(JSON.stringify(pc.localDescription));
-        await accionActualizarRespuesta(idTransmision, sdpPlano);
-      }
-    };
-  } catch (error) {
-    console.error("Error procesando oferta:", error);
-  }
-};
-  const manejarEnvioMensaje = async (e: React.FormEvent) => {
+  const detener = () => {
+    console.log('Deteniendo transmision...');
+    if (streamLocalRef.current) {
+      streamLocalRef.current.getTracks().forEach(t => t.stop());
+      streamLocalRef.current = null;
+    }
+    
+    peersActivosRef.current.forEach(pc => pc.close());
+    peersActivosRef.current.clear();
+
+    if (pcEspectadorRef.current) {
+      pcEspectadorRef.current.close();
+      pcEspectadorRef.current = null;
+    }
+
+    if (videoRef.current) videoRef.current.srcObject = null;
+    
+    setEnVivo(false);
+    setRol(null);
+    setEstado('Esperando accion...');
+  };
+
+  const enviarMsg = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!entradaMensaje.trim()) return;
-
-    await accionEnviarMensaje(idTransmision, nombreUsuario, entradaMensaje);
-    setEntradaMensaje('');
+    if (!inputTexto.trim()) return;
+    await accionEnviarMensaje(idTransmision, nombreUsuario, inputTexto);
+    setInputTexto('');
   };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 p-6 max-w-7xl mx-auto rounded-3xl border border-neutral-300 dark:border-neutral-800 bg-background-light dark:bg-background-dark font-goldman transition-colors">
       
-      {/* SECCIÓN DEL VIDEO */}
-      <div className="lg:col-span-3 flex flex-col justify-between rounded-2xl overflow-hidden relative bg-neutral-200 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800">
+      <div className="lg:col-span-3 flex flex-col justify-between rounded-2xl overflow-hidden relative bg-neutral-900 border border-neutral-700">
         
-        {/* Encabezado del Video */}
-        <div className="p-4 bg-white/40 dark:bg-black/40 backdrop-blur-md absolute top-0 left-0 right-0 z-10 flex justify-between items-center border-b border-neutral-300 dark:border-neutral-800">
+        <div className="p-4 bg-black/60 backdrop-blur-md absolute top-0 left-0 right-0 z-10 flex justify-between items-center border-b border-neutral-800">
           <div className="flex items-center gap-3">
-            <span className={`h-3 w-3 rounded-full ${enVivo ? 'bg-red-500 animate-pulse' : 'bg-neutral-400'}`} />
-            <h2 className="font-bold text-neutral-900 dark:text-neutral-50 tracking-wide uppercase">Señal en Vivo</h2>
+            <span className={`h-3 w-3 rounded-full ${enVivo ? 'bg-red-600 animate-pulse' : 'bg-neutral-500'}`} />
+            <h2 className="font-bold text-white tracking-wide uppercase text-sm">
+              {enVivo ? 'SENAL EN VIVO' : 'STREAMING WEBRTC'}
+            </h2>
           </div>
+          {enVivo && (
+            <span className="text-xs text-neutral-400 font-mono text-right max-w-xs truncate">{estado}</span>
+          )}
         </div>
 
-        {/* Pantalla del Reproductor */}
-        <div className="flex-1 flex items-center justify-center min-h-[400px]">
+        <div className="flex-1 flex items-center justify-center min-h-[450px]">
           {!enVivo ? (
-            <div className="text-center p-8 flex flex-col gap-4 max-w-sm">
-              <p className="text-neutral-600 dark:text-neutral-400 text-sm">
-                Selecciona una opción para arrancar el entorno WebRTC de tu portafolio.
+            <div className="text-center p-8 flex flex-col gap-6 max-w-md z-10">
+              <p className="text-neutral-400 text-sm">
+                Transmision P2P dedicada por espectador.
               </p>
               <div className="flex gap-4 justify-center">
-                <button 
-                  onClick={iniciarTransmision}
-                  className="flex items-center gap-2 px-5 py-3 font-bold rounded-xl shadow-lg transition-all active:scale-95 text-sm cursor-pointer bg-primary-light text-white dark:bg-primary-dark"
-                >
+                <button onClick={iniciarTransmision} className="flex items-center gap-2 px-6 py-3 font-bold rounded-xl text-sm cursor-pointer bg-red-600 hover:bg-red-700 text-white transition-colors">
                   <IoVideocam /> Transmitir
                 </button>
-                <button 
-                  onClick={unirseTransmision}
-                  className="flex items-center gap-2 px-5 py-3 font-bold rounded-xl shadow-lg transition-all active:scale-95 text-sm cursor-pointer bg-neutral-700 hover:bg-neutral-600 text-white"
-                >
-                  <IoPeople /> Ver Señal
+                <button onClick={unirseComoEspectador} className="flex items-center gap-2 px-6 py-3 font-bold rounded-xl text-sm cursor-pointer bg-neutral-700 hover:bg-neutral-600 text-white transition-colors">
+                  <IoPeople /> Ver Senal
                 </button>
               </div>
             </div>
           ) : (
             <video
-              ref={rol === 'transmisor' ? videoLocalRef : videoRemotoRef}
+              ref={videoRef}
               autoPlay
               playsInline
               muted={rol === 'transmisor'}
-              className="w-full h-full object-cover max-h-[550px]"
+              className="w-full h-full object-contain bg-black"
             />
           )}
         </div>
 
-        {/* Barra inferior de controles */}
         {enVivo && (
-          <div className="p-4 border-t border-neutral-300 dark:border-neutral-800 flex justify-between items-center bg-white/20 dark:bg-black/20">
-            <p className="text-xs text-neutral-600 dark:text-neutral-400">
-              Modo activo: <span className="text-primary-light dark:text-orange-400 font-bold uppercase">{rol}</span>
-            </p>
-            <button 
-              onClick={() => window.location.reload()} 
-              className="p-2 bg-neutral-300 dark:bg-neutral-800 text-red-500 rounded-lg hover:scale-105 transition-transform cursor-pointer"
-            >
-              <IoStopCircle size={22} />
+          <div className="p-4 border-t border-neutral-800 flex justify-between items-center bg-black/40">
+            <p className="text-xs text-neutral-500 uppercase font-bold">{rol}</p>
+            <button onClick={detener} className="flex items-center gap-2 px-4 py-2 bg-red-600/20 text-red-500 rounded-lg hover:bg-red-600/30 transition-colors cursor-pointer text-sm font-bold">
+              <IoStopCircle size={18} /> Detener
             </button>
           </div>
         )}
       </div>
 
-      {/* SECCIÓN DEL CHAT */}
       <div className="flex flex-col h-[550px] rounded-2xl overflow-hidden bg-white/50 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-800">
         <div className="p-4 border-b border-neutral-300 dark:border-neutral-800 font-bold text-sm tracking-wide text-neutral-700 dark:text-neutral-300 uppercase">
-          Chat de la comunidad
+          Chat
         </div>
 
-        {/* Caja de mensajes */}
         <div className="flex-1 p-4 overflow-y-auto space-y-3 text-sm">
           {mensajes.length === 0 ? (
-            <p className="text-neutral-400 dark:text-neutral-500 text-center italic mt-10">Sin mensajes en este momento...</p>
+            <p className="text-neutral-400 text-center italic mt-10 text-xs">Sin mensajes...</p>
           ) : (
             mensajes.map((msg) => (
-              <div key={msg.id} className="p-2.5 rounded-xl bg-neutral-200/50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800">
-                <span className="font-bold text-primary-light dark:text-orange-400 text-xs block mb-0.5">{msg.nombre_usuario}</span>
-                <p className="text-neutral-800 dark:text-neutral-200 leading-relaxed break-words">{msg.mensaje}</p>
+              <div key={msg.id} className="p-2.5 rounded-xl bg-neutral-200/50 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700">
+                <span className="font-bold text-red-500 dark:text-orange-400 text-xs block mb-0.5">{msg.nombre_usuario}</span>
+                <p className="text-neutral-800 dark:text-neutral-200 leading-relaxed break-words text-xs">{msg.mensaje}</p>
               </div>
             ))
           )}
         </div>
 
-        {/* Formulario de envío */}
-        <form onSubmit={manejarEnvioMensaje} className="p-3 border-t border-neutral-300 dark:border-neutral-800 flex gap-2 bg-white/80 dark:bg-black/40">
+        <form onSubmit={enviarMsg} className="p-3 border-t border-neutral-300 dark:border-neutral-800 flex gap-2 bg-white/80 dark:bg-black/40">
           <input
             type="text"
-            placeholder="Escribe algo..."
-            value={entradaMensaje}
-            onChange={(e) => setEntradaMensaje(e.target.value)}
-            className="flex-1 rounded-xl px-3 text-xs bg-neutral-100 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 focus:outline-none focus:border-primary-light text-neutral-900 dark:text-neutral-50"
+            placeholder="Mensaje..."
+            value={inputTexto}
+            onChange={(e) => setInputTexto(e.target.value)}
+            className="flex-1 rounded-xl px-3 py-2 text-xs bg-neutral-100 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 focus:outline-none focus:border-red-500 text-neutral-900 dark:text-neutral-50"
           />
-          <button 
-            type="submit"
-            className="p-2.5 text-white rounded-xl transition-all active:scale-95 cursor-pointer bg-primary-light dark:bg-primary-dark"
-          >
+          <button type="submit" className="p-2.5 text-white rounded-xl transition-colors cursor-pointer bg-red-600 hover:bg-red-700">
             <IoSend size={14} />
           </button>
         </form>
