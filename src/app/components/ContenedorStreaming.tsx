@@ -331,7 +331,7 @@ export default function ContenedorStreaming({
                 )}
                 {modo === 'espectador' && (
                   <button onClick={unirseComoEspectador} className="flex items-center gap-2 px-6 py-3 font-bold rounded-xl text-sm cursor-pointer bg-neutral-700 hover:bg-neutral-600 text-white transition-colors">
-                    <IoPeople /> Ver Senal
+                    <IoPeople /> Ver Señal
                   </button>
                 )}
               </div>
