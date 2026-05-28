@@ -6,7 +6,7 @@ import { IoVideocam, IoPeople, IoSend, IoStopCircle } from 'react-icons/io5';
 import { Mensaje } from '@/types/admin';
 
 interface Props {
-  modo: 'transmisor' | 'espectador'; // UNICA PROPIEDAD NUEVA
+  modo: 'transmisor' | 'espectador'; // 
   idTransmision: string;
   accionAsegurarSala: (id: string, titulo: string) => Promise<void>;
   accionIniciarVivo: (id: string) => Promise<void>;
@@ -368,7 +368,7 @@ export default function ContenedorStreaming({
          backgroundSize: '100px',
          backgroundRepeat: 'no-repeat',
          backgroundPosition: 'center',
-         backgroundOpacity: 0.05
+         
        }}>
     
     {/* Overlay para que los mensajes sean legibles */}
