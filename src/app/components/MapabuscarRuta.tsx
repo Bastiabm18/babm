@@ -147,7 +147,7 @@ export default function MapaBuscarRuta() {
     <div className="w-full flex flex-col gap-4">
       {/* Contenedor del Mapa */}
       <div className="w-full h-96 md:h-[450px] rounded-lg shadow-lg overflow-hidden border border-border-light dark:border-border-dark">
-        <MapContainer center={[-36.8271, -73.0503]} zoom={7} scrollWheelZoom={true} className="w-full h-full">
+        <MapContainer center={[-36.8271, -73.0503]} zoom={7} scrollWheelZoom={true} className="w-full h-full z-10" >
           <TileLayer key={mapStyleId} url={tileUrl} tileSize={512} zoomOffset={-1} />
           
           <EscuchadorClicksMapa />
@@ -156,7 +156,7 @@ export default function MapaBuscarRuta() {
             <Marker key={index} position={[punto.lat, punto.lng]}>
               <Popup>
                 <div className="text-xs font-bold">
-                  {index === 0 ? '📍 Origen' : index === puntosCreados.length - 1 ? '🏁 Destino' : `🛑 Parada ${index}`}
+                  {index === 0 ? ' Origen' : index === puntosCreados.length - 1 ? '🏁 Destino' : `Parada ${index}`}
                 </div>
               </Popup>
             </Marker>
@@ -179,7 +179,7 @@ export default function MapaBuscarRuta() {
           </h4>
           {modoCreacion && (
             <span className="text-[11px] font-semibold animate-pulse">
-              🖱️ Haz clic sobre el mapa para ir inyectando localidades
+               Haz clic sobre el mapa para ir inyectando localidades
             </span>
           )}
         </div>
