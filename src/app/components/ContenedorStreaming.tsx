@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { getSupabaseBrowser } from '@/lib/supabase/supabase-client';
-import { IoVideocam, IoPeople, IoSend, IoStopCircle } from 'react-icons/io5';
+import { IoVideocam, IoPeople, IoSend, IoStopCircle, IoExpand,IoCameraReverse } from 'react-icons/io5';
 import { Mensaje } from '@/types/admin';
 
 interface Props {
@@ -48,6 +48,7 @@ export default function ContenedorStreaming({
   const streamLocalRef = useRef<MediaStream | null>(null);
   const peersActivosRef = useRef<Map<string, RTCPeerConnection>>(new Map());
   const pcEspectadorRef = useRef<RTCPeerConnection | null>(null);
+  const videoContainerRef = useRef<HTMLDivElement>(null);
 
   const supabase = getSupabaseBrowser();
   
@@ -338,6 +339,18 @@ export default function ContenedorStreaming({
     }
   };
 
+   const togglePantallaCompleta = () => {
+    if (!videoContainerRef.current) return;
+    
+    if (!document.fullscreenElement) {
+      videoContainerRef.current.requestFullscreen().catch(err => {
+        console.error('Error al entrar a pantalla completa:', err);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  };
+
   const enviarMsg = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputTexto.trim()) return;
@@ -361,8 +374,7 @@ export default function ContenedorStreaming({
             <span className="text-xs text-neutral-400 font-mono text-right max-w-xs truncate">{estado}</span>
           )}
         </div>
-
-        <div className="flex-1 flex items-center justify-center min-h-[450px]">
+      <div ref={videoContainerRef} className="flex-1 flex items-center justify-center min-h-[450px] bg-black">
           {!enVivo ? (
             <div className="text-center p-8 flex flex-col gap-6 max-w-md z-10">
               <p className="text-neutral-400 text-sm">
@@ -400,7 +412,18 @@ export default function ContenedorStreaming({
             className="absolute bottom-20 right-4 z-20 p-3 bg-neutral-800/80 hover:bg-neutral-700 text-white rounded-full shadow-lg transition-colors cursor-pointer backdrop-blur-sm"
             title="Girar cámara"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
+            <IoCameraReverse size={20} />
+          </button>
+        )}
+
+    {/* Botón flotante pantalla completa (solo espectador y en vivo) */}
+        {enVivo && rol === 'espectador' && (
+          <button 
+            onClick={togglePantallaCompleta} 
+            className="absolute bottom-20 right-4 z-20 p-3 bg-neutral-800/80 hover:bg-neutral-700 text-white rounded-full shadow-lg transition-colors cursor-pointer backdrop-blur-sm"
+            title="Pantalla completa"
+          >
+            <IoExpand size={20} />
           </button>
         )}
 
