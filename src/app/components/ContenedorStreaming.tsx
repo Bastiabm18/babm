@@ -39,6 +39,7 @@ export default function ContenedorStreaming({
   const [mensajes, setMensajes] = useState<Mensaje[]>([]);
   const [inputTexto, setInputTexto] = useState('');
   const [estado, setEstado] = useState(modo === 'transmisor' ? 'Esperando accion...' : 'Esperando accion...');
+  const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
   
   const [viewerId] = useState(() => `v_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`);
   const [nombreUsuario] = useState(`User_${Math.floor(Math.random() * 1000)}`);
@@ -242,7 +243,10 @@ export default function ContenedorStreaming({
   const iniciarTransmision = async () => {
     try {
       setEstado('Solicitando camara...');
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: {facingMode: facingMode}, 
+        audio: true 
+        });
       streamLocalRef.current = stream;
       
       // No asignamos el srcObject aqui, lo hace el useEffect
@@ -290,6 +294,48 @@ export default function ContenedorStreaming({
     
     setEnVivo(false);
     setEstado(modo === 'transmisor' ? 'Esperando accion...' : 'Esperando accion...');
+  };
+    const cambiarCamara = async () => {
+    if (rol !== 'transmisor' || !streamLocalRef.current) return;
+
+    const nuevoModo = facingMode === 'user' ? 'environment' : 'user';
+    setEstado('Cambiando camara...');
+
+    try {
+      // 1. Pedir el nuevo stream
+      const nuevoStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: nuevoModo },
+        audio: true
+      });
+
+      // 2. Actualizar el video local
+      streamLocalRef.current = nuevoStream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = nuevoStream;
+      }
+
+      const nuevoVideoTrack = nuevoStream.getVideoTracks()[0];
+
+      // 3. Reemplazar el track en TODOS los espectadores conectados sin cortarles la conexión
+      peersActivosRef.current.forEach((pc, id) => {
+        const sender = pc.getSenders().find(s => s.track?.kind === 'video');
+        if (sender) {
+          sender.replaceTrack(nuevoVideoTrack);
+          console.log(`[TRANSMISOR] Camara reemplazada para espectador: ${id}`);
+        }
+      });
+
+      // 4. Detener el stream viejo para liberar la cámara anterior
+      streamLocalRef.current.getAudioTracks().forEach(t => t.stop()); // paramos el audio viejo
+      // Nota: no detenemos el video viejo aqui porque ya lo reemplazamos, 
+      // pero para ser limpios buscamos el track viejo y lo paramos.
+      
+      setFacingMode(nuevoModo);
+      setEstado(`En vivo - ${peersActivosRef.current.size} espectador(es)`);
+    } catch (err: any) {
+      console.error('[TRANSMISOR] Error al cambiar camara:', err);
+      setEstado(`Error al cambiar camara: ${err.message}`);
+    }
   };
 
   const enviarMsg = async (e: React.FormEvent) => {
@@ -346,6 +392,17 @@ export default function ContenedorStreaming({
             />
           )}
         </div>
+
+     {/* Botón flotante para girar cámara (solo transmisor y en vivo) */}
+        {enVivo && rol === 'transmisor' && (
+          <button 
+            onClick={cambiarCamara} 
+            className="absolute bottom-20 right-4 z-20 p-3 bg-neutral-800/80 hover:bg-neutral-700 text-white rounded-full shadow-lg transition-colors cursor-pointer backdrop-blur-sm"
+            title="Girar cámara"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
+          </button>
+        )}
 
         {enVivo && (
           <div className="p-4 border-t border-neutral-800 flex justify-between items-center bg-black/40">
