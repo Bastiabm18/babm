@@ -173,7 +173,7 @@ export default function ContenedorStreaming({
     if (rol !== 'espectador' || !enVivo) return;
 
     console.log('[ESPECTADOR] Suscrito a mi canal privado de oferta...');
-    setEstado('Esperando que el transmisor genere mi oferta...');
+    setEstado('Esperando transmision... ');
 
     const canal = supabase
       .channel(`mi-oferta-${viewerId}`)
@@ -187,7 +187,7 @@ export default function ContenedorStreaming({
         if (!ofertaSdp || pcEspectadorRef.current) return;
 
         console.log('[ESPECTADOR] Oferta recibida del transmisor!');
-        setEstado('Procesando senal...');
+        setEstado('Procesando señal...');
 
         try {
           const pc = new RTCPeerConnection(RTC_CONFIG);
@@ -197,7 +197,7 @@ export default function ContenedorStreaming({
             console.log('[ESPECTADOR] Track remoto recibido!', event.streams[0]);
             if (videoRef.current && event.streams[0]) {
               videoRef.current.srcObject = event.streams[0];
-              setEstado('Reproduciendo senal...');
+              setEstado('Reproduciendo señal...');
             }
           };
 
