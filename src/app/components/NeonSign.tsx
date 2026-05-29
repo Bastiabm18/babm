@@ -37,8 +37,8 @@ const NeonSign = () => {
         ease: 'easeInOut',     // Suaviza el cambio entre opacidades
       }}
     >
-      <a href='/' className="bg-cover font-extrabold text-2xl md:text-3xl tracking-wider bg-clip-text">
-        Babm.cl
+      <a href='/' className="bg-cover font-extrabold text-md md:text-3xl tracking-wider bg-clip-text">
+        BarriosWeb.cl
       </a>
     </motion.div>
   );
