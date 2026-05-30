@@ -13,7 +13,7 @@ import AboutUs from '../components/About';
 import HeroSlider from '../components/HeroSlider';
 import ContenedorStreaming from '../components/ContenedorStreaming';
 import LogoBabm from '../components/LogoBabm';
-import MapaBuscarRuta from '../components/MapaBuscarRuta';
+import MapaBuscarRuta from '../components/MapabuscarRuta';
 import { 
   asegurarSala, 
   iniciarEstadoVivo, 
