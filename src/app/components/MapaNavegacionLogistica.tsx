@@ -10,6 +10,7 @@ import { useUbicacionTiempoReal } from '../[lang]/hook/useUbicacionTiempoReal';
 const DEFAULT_CENTER: [number, number] = [-73.0498, -36.8270];
 
 type EstadoMapa = 'cargando' | 'token-invalido' | 'error-gl' | 'listo';
+type EstadoNavegacion = 'libre' | 'cuenta_regresiva' | 'navegando';
 
 interface IndicacionPaso {
   texto: string;
@@ -26,6 +27,11 @@ export default function MapaNavegacionLogistica() {
   const prevLocationRef = useRef<[number, number] | null>(null);
   const distanciaRecorridaRef = useRef<number>(0);
   const distanciaAcumuladaPasosRef = useRef<number[]>([]);
+  
+  // Refs para el filtro anti-bailoteo del GPS
+  const ultimaPosValidaRef = useRef<[number, number] | null>(null);
+  const ultimoHeadingValidoRef = useRef<number | null>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   const { ubicacion, error: errorGps } = useUbicacionTiempoReal();
   const [destino, setDestino] = useState<[number, number] | null>(null);
@@ -40,9 +46,12 @@ export default function MapaNavegacionLogistica() {
   const [pasoActualIdx, setPasoActualIdx] = useState<number>(0);
   const [estaMutado, setEstaMutado] = useState(false);
   
-  // Nuevos estados de UI
   const [mapaDescentrado, setMapaDescentrado] = useState<boolean>(false);
   const [panelMinimizado, setPanelMinimizado] = useState<boolean>(false);
+  
+  // Nuevos estados para la cuenta regresiva
+  const [estadoNavegacion, setEstadoNavegacion] = useState<EstadoNavegacion>('libre');
+  const [segundosRestantes, setSegundosRestantes] = useState<number>(5);
 
   useEffect(() => {
     if (vistaActiva !== 'mapa') return;
@@ -71,7 +80,7 @@ export default function MapaNavegacionLogistica() {
 
     if (!token.startsWith('pk.')) {
       setEstadoMapa('token-invalido');
-      setErrorDetalle(`Token invalido. Debe empezar con "pk." - Actual: ${token.substring(0, 10)}...`);
+      setErrorDetalle(`Token invalido. Debe empezar con "pk."`);
       return;
     }
 
@@ -97,14 +106,12 @@ export default function MapaNavegacionLogistica() {
 
       mapRef.current = mapa;
 
-      // DETECCION DE ARRASTRE: Si el usuario mueve el mapa, pausamos el seguimiento automatico
       mapa.on('dragstart', () => {
         setMapaDescentrado(true);
       });
 
       mapa.on('load', () => {
         setEstadoMapa('listo');
-
         mapa.setFog({
           range: [0.5, 10],
           color: '#242b3b',
@@ -142,6 +149,8 @@ export default function MapaNavegacionLogistica() {
 
       mapa.on('click', (e) => {
         setDestino([e.lngLat.lng, e.lngLat.lat]);
+        setEstadoNavegacion('cuenta_regresiva');
+        setSegundosRestantes(5);
       });
 
     } catch (err) {
@@ -157,6 +166,27 @@ export default function MapaNavegacionLogistica() {
     };
   }, [vistaActiva, estaMontado]);
 
+  // TIMER CUENTA REGRESIVA
+  useEffect(() => {
+    if (estadoNavegacion !== 'cuenta_regresiva') {
+      if (timerRef.current) clearInterval(timerRef.current);
+      return;
+    }
+
+    timerRef.current = setInterval(() => {
+      setSegundosRestantes((prev) => {
+        if (prev <= 1) {
+          if (timerRef.current) clearInterval(timerRef.current);
+          iniciarNavegacionReal();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [estadoNavegacion]);
+
   const calcularDistanciaMetros = (p1: [number, number], p2: [number, number]) => {
     const R = 6371e3;
     const dLat = (p2[1] - p1[1]) * Math.PI / 180;
@@ -167,17 +197,53 @@ export default function MapaNavegacionLogistica() {
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   };
 
-  // LOGICA MODIFICADA: Solo mover la camara si el usuario no ha arrastrado el mapa
+  // TRIGONOMETRIA: Calcular punto 40m detras del auto para la camara
+  const calcularCentroCamaraAtras = (lat: number, lon: number, heading: number | null): [number, number] => {
+    const headingReal = (heading ?? 0) * Math.PI / 180;
+    const offsetMetros = -40; // 40 metros atras
+    const dLat = (Math.cos(headingReal) * offsetMetros) / 111320;
+    const dLon = (Math.sin(headingReal) * offsetMetros) / (111320 * Math.cos((lat * Math.PI) / 180));
+    return [lon - dLon, lat - dLat];
+  };
+
+  // LOGICA GPS CON FILTRO ANTI-BAILOTEO
   useEffect(() => {
     if (!ubicacion || !mapRef.current || !marcadorUsuarioRef.current) return;
 
     const nuevaPos: [number, number] = [ubicacion.longitud, ubicacion.latitud];
+    let headingActual = ubicacion.heading;
+
+    // FILTRO 1: Ignorar si el movimiento es menor a 5 metros (bailoteo estatico)
+    if (ultimaPosValidaRef.current) {
+      const metrosMovidos = calcularDistanciaMetros(ultimaPosValidaRef.current, nuevaPos);
+      
+      if (metrosMovidos < 5) {
+        marcadorUsuarioRef.current.setLngLat(ultimaPosValidaRef.current);
+        // No movemos la camara si estamos "estacionados" para evitar micro-rotaciones
+        return; 
+      }
+
+      // FILTRO 2: Ignorar saltos de direccion absurdos si nos movimos poco
+      if (ultimoHeadingValidoRef.current !== null && headingActual !== null) {
+        let diff = Math.abs(headingActual - ultimoHeadingValidoRef.current);
+        if (diff > 180) diff = 360 - diff;
+        
+        if (diff > 90 && metrosMovidos < 20) {
+          headingActual = ultimoHeadingValidoRef.current; // Mantener rumbo anterior
+        }
+      }
+    }
+
+    // Si paso los filtros, actualizamos refs y marcador
+    ultimaPosValidaRef.current = nuevaPos;
+    if (headingActual !== null) ultimoHeadingValidoRef.current = headingActual;
     marcadorUsuarioRef.current.setLngLat(nuevaPos);
 
-    if (destino && distanciaAcumuladaPasosRef.current.length > 0) {
+    // Avance de indicaciones (solo si estamos navegando de verdad)
+    if (estadoNavegacion === 'navegando' && distanciaAcumuladaPasosRef.current.length > 0) {
       if (prevLocationRef.current) {
         const metrosNuevos = calcularDistanciaMetros(prevLocationRef.current, nuevaPos);
-        if (metrosNuevos < 100) distanciaRecorridaRef.current += metrosNuevos;
+        distanciaRecorridaRef.current += metrosNuevos;
       }
       prevLocationRef.current = nuevaPos;
 
@@ -185,19 +251,32 @@ export default function MapaNavegacionLogistica() {
       for (let i = 0; i < distanciaAcumuladaPasosRef.current.length; i++) {
         if (distanciaRecorridaRef.current >= distanciaAcumuladaPasosRef.current[i]) nuevoIdx = i;
       }
-      setPasoActualIdx(nuevoIdx);
+      setPasoActualIdx(prev => prev !== nuevoIdx ? nuevoIdx : prev);
     }
 
-    // CONDICION CLAVE: Si no está descentrado, seguimos al auto
+    // Movimiento de camara
     if (!mapaDescentrado) {
-      mapRef.current.easeTo({
-        center: nuevaPos,
-        bearing: ubicacion.heading ?? 0,
-        pitch: 65,
-        duration: 1000
-      });
+      if (estadoNavegacion === 'navegando') {
+        // Vista atras estilo Waze
+        const centroCamara = calcularCentroCamaraAtras(nuevaPos[1], nuevaPos[0], headingActual);
+        mapRef.current.easeTo({
+          center: centroCamara,
+          bearing: headingActual ?? 0,
+          pitch: 70,
+          duration: 1000
+        });
+      } else {
+        // Vista normal superior si solo estamos posicionados
+        mapRef.current.easeTo({
+          center: nuevaPos,
+          bearing: headingActual ?? 0,
+          pitch: 65,
+          zoom: 16,
+          duration: 1000
+        });
+      }
     }
-  }, [ubicacion, destino, mapaDescentrado]);
+  }, [ubicacion, estadoNavegacion, mapaDescentrado]);
 
   const hablarIndicacion = useCallback((texto: string) => {
     if (estaMutado || typeof window === 'undefined') return;
@@ -208,13 +287,15 @@ export default function MapaNavegacionLogistica() {
     window.speechSynthesis.speak(enunciar);
   }, [estaMutado]);
 
+  // Solo hablar si el indice REALMENTE cambio (evita bucle de voz)
   useEffect(() => {
-    if (indicaciones.length > 0 && destino) {
+    if (indicaciones.length > 0 && estadoNavegacion === 'navegando' && indicaciones[pasoActualIdx]) {
       hablarIndicacion(indicaciones[pasoActualIdx].texto);
     }
-  }, [pasoActualIdx, indicaciones, destino, hablarIndicacion]);
+  }, [pasoActualIdx, indicaciones, estadoNavegacion, hablarIndicacion]);
 
-  const manejarDestino = useCallback(() => {
+  // Dibujar marcador de destino al seleccionar (sin trazar ruta aun)
+  useEffect(() => {
     if (!destino || !mapRef.current) return;
 
     if (!marcadorDestinoRef.current) {
@@ -236,15 +317,26 @@ export default function MapaNavegacionLogistica() {
     } else {
       marcadorDestinoRef.current.setLngLat(destino);
     }
+  }, [destino]);
 
-    if (ubicacion) {
+  const iniciarNavegacionReal = () => {
+    setEstadoNavegacion('navegando');
+    setMapaDescentrado(false); // Forzar seguimiento
+    
+    if (ubicacion && destino) {
       trazarRutaLogistica([ubicacion.longitud, ubicacion.latitud], destino);
+      
+      // Movimiento inicial brusco hacia atras
+      const centroCamara = calcularCentroCamaraAtras(ubicacion.latitud, ubicacion.longitud, ubicacion.heading);
+      mapRef.current?.easeTo({
+        center: centroCamara,
+        bearing: ubicacion.heading ?? 0,
+        pitch: 70,
+        zoom: 16,
+        duration: 1200
+      });
     }
-  }, [destino, ubicacion]);
-
-  useEffect(() => {
-    manejarDestino();
-  }, [manejarDestino]);
+  };
 
   const trazarRutaLogistica = async (origen: [number, number], fin: [number, number]) => {
     const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
@@ -267,7 +359,7 @@ export default function MapaNavegacionLogistica() {
         tipo: step.maneuver.type
       }));
       setIndicaciones(pasosFormateados);
-      setPanelMinimizado(false); // Abrir panel al crear ruta nueva
+      setPanelMinimizado(false);
 
       let acum = 0;
       const distAcum = pasos.map((step: any) => { acum += step.distance; return acum; });
@@ -293,21 +385,34 @@ export default function MapaNavegacionLogistica() {
     }
   };
 
-  // NUEVA FUNCION: Centrar camara detras del auto
   const centrarCamara = () => {
     if (!ubicacion || !mapRef.current) return;
-    mapRef.current.easeTo({
-      center: [ubicacion.longitud, ubicacion.latitud],
-      bearing: ubicacion.heading ?? 0,
-      pitch: 65,
-      zoom: 16,
-      duration: 800
-    });
+    
+    if (estadoNavegacion === 'navegando') {
+      // Centrar usando la vista trasera
+      const centroCamara = calcularCentroCamaraAtras(ubicacion.latitud, ubicacion.longitud, ubicacion.heading);
+      mapRef.current.easeTo({
+        center: centroCamara,
+        bearing: ubicacion.heading ?? 0,
+        pitch: 70,
+        zoom: 16,
+        duration: 800
+      });
+    } else {
+      // Centrar vista normal
+      mapRef.current.easeTo({
+        center: [ubicacion.longitud, ubicacion.latitud],
+        bearing: ubicacion.heading ?? 0,
+        pitch: 65,
+        zoom: 16,
+        duration: 800
+      });
+    }
     setMapaDescentrado(false);
   };
 
-  // NUEVA FUNCION: Salir del viaje sin cerrar el mapa
   const cancelarViaje = () => {
+    if (timerRef.current) clearInterval(timerRef.current);
     window.speechSynthesis?.cancel();
     
     if (marcadorDestinoRef.current) {
@@ -325,6 +430,7 @@ export default function MapaNavegacionLogistica() {
     setDistanciaEstimada(null);
     setIndicaciones([]);
     setPasoActualIdx(0);
+    setEstadoNavegacion('libre');
     distanciaRecorridaRef.current = 0;
     prevLocationRef.current = null;
     distanciaAcumuladaPasosRef.current = [];
@@ -333,6 +439,7 @@ export default function MapaNavegacionLogistica() {
   };
 
   const cerrarMapa = useCallback(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
     window.speechSynthesis?.cancel();
     if (mapRef.current) {
       mapRef.current.remove();
@@ -349,7 +456,10 @@ export default function MapaNavegacionLogistica() {
     setEstaMontado(false);
     setMapaDescentrado(false);
     setPanelMinimizado(false);
+    setEstadoNavegacion('libre');
     prevLocationRef.current = null;
+    ultimaPosValidaRef.current = null;
+    ultimoHeadingValidoRef.current = null;
     distanciaRecorridaRef.current = 0;
     distanciaAcumuladaPasosRef.current = [];
     setVistaActiva('panel');
@@ -360,9 +470,7 @@ export default function MapaNavegacionLogistica() {
       <div className="w-full p-6 flex flex-col items-center justify-center min-h-[400px] bg-neutral-900 rounded-xl border border-neutral-800">
         <div className="text-center max-w-md">
           <h2 className="text-2xl font-bold text-white mb-2">Navegacion Logistica</h2>
-          <p className="text-neutral-400 text-sm mb-6">
-            Accede al modulo de seguimiento 3D con rastreo GPS, indicaciones por voz y trazado de rutas optimizadas.
-          </p>
+          <p className="text-neutral-400 text-sm mb-6">Accede al modulo de seguimiento 3D con rastreo GPS e indicaciones por voz.</p>
           {errorGps && (
             <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 mb-4 text-left">
               <p className="text-red-400 text-xs">Alerta GPS: {errorGps}</p>
@@ -383,11 +491,6 @@ export default function MapaNavegacionLogistica() {
         <div className="bg-red-950/50 border border-red-500/30 rounded-2xl p-8 max-w-lg text-center">
           <h2 className="text-2xl font-bold text-red-400 mb-4">Token de Mapbox Invalido</h2>
           <p className="text-red-300 text-sm mb-6">{errorDetalle}</p>
-          <div className="bg-black/40 rounded-lg p-4 text-left mb-6">
-            <p className="text-neutral-400 text-xs font-mono mb-2"># Solucion: Agrega a tu archivo .env.local</p>
-            <code className="text-green-400 text-sm block bg-black/50 p-3 rounded">NEXT_PUBLIC_MAPBOX_TOKEN=pk.ey...</code>
-            <p className="text-neutral-500 text-xs mt-3">Obten tu token gratis en: mapbox.com/account/access-tokens</p>
-          </div>
           <button onClick={cerrarMapa} className="bg-neutral-800 hover:bg-neutral-700 text-white font-semibold py-2.5 px-6 rounded-lg transition-colors">Volver</button>
         </div>
       </div>
@@ -400,7 +503,6 @@ export default function MapaNavegacionLogistica() {
         <div className="bg-yellow-950/50 border border-yellow-500/30 rounded-2xl p-8 max-w-lg text-center">
           <h2 className="text-2xl font-bold text-yellow-400 mb-4">Error al Cargar Mapa</h2>
           <p className="text-yellow-300 text-sm mb-4">{errorDetalle}</p>
-          <p className="text-neutral-400 text-xs mb-6">Posibles causas: WebGL no soportado, conexion a internet, o el navegador bloqueo el contenido.</p>
           <button onClick={cerrarMapa} className="bg-neutral-800 hover:bg-neutral-700 text-white font-semibold py-2.5 px-6 rounded-lg transition-colors">Volver</button>
         </div>
       </div>
@@ -409,8 +511,8 @@ export default function MapaNavegacionLogistica() {
 
   return (
     <div className="fixed inset-0 w-full h-full bg-neutral-900 z-50 flex flex-col">
-      {/* HUD Superior */}
-      {indicaciones.length > 0 && (
+      {/* HUD Superior (Solo si esta navegando) */}
+      {estadoNavegacion === 'navegando' && indicaciones.length > 0 && (
         <div className="w-full bg-neutral-900/95 backdrop-blur-md text-white p-4 shadow-xl border-b border-neutral-800 flex items-center justify-between z-[60]">
           <div className="flex items-center gap-4 min-w-0">
             <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center shadow-md animate-pulse shrink-0">
@@ -425,15 +527,14 @@ export default function MapaNavegacionLogistica() {
               </p>
             </div>
           </div>
-
           <div className="flex items-center gap-2 shrink-0 ml-4">
             <div className="hidden sm:block text-right mr-2">
               <p className="text-sm font-bold text-blue-400">{distanciaEstimada}</p>
             </div>
-            <button onClick={() => setEstaMutado(!estaMutado)} className="p-3 rounded-full bg-neutral-800 hover:bg-neutral-700 transition-colors text-neutral-300" title={estaMutado ? 'Activar voz' : 'Silenciar voz'}>
+            <button onClick={() => setEstaMutado(!estaMutado)} className="p-3 rounded-full bg-neutral-800 hover:bg-neutral-700 transition-colors text-neutral-300">
               {estaMutado ? <FaVolumeMute className="text-lg text-red-400" /> : <FaVolumeUp className="text-lg text-green-400" />}
             </button>
-            <button onClick={cancelarViaje} className="p-3 rounded-full bg-neutral-800 hover:bg-red-600 transition-colors text-neutral-300 hover:text-white" title="Salir del viaje">
+            <button onClick={cancelarViaje} className="p-3 rounded-full bg-neutral-800 hover:bg-red-600 transition-colors text-neutral-300 hover:text-white">
               <FiX className="text-xl" />
             </button>
           </div>
@@ -453,7 +554,7 @@ export default function MapaNavegacionLogistica() {
           </div>
         )}
 
-        {/* Panel Izquierdo (Sin ruta activa) */}
+        {/* Panel Izquierdo (Sin ruta) */}
         {indicaciones.length === 0 && (
           <div className="absolute top-4 left-4 z-50 w-[320px] sm:w-[360px]">
             <div className="bg-neutral-800/95 backdrop-blur-md p-4 rounded-xl border border-neutral-700 shadow-2xl text-white">
@@ -472,27 +573,20 @@ export default function MapaNavegacionLogistica() {
                   <p className="text-xs text-neutral-400">Esperando senal GPS...</p>
                 </div>
               ) : (
-                <div className="space-y-2">
-                  <div className="bg-black/30 rounded-lg p-2.5">
-                    <p className="text-[10px] text-neutral-500 uppercase tracking-wider mb-0.5">Ubicacion GPS</p>
-                    <p className="text-xs font-mono text-neutral-200">{ubicacion.latitud.toFixed(5)}, {ubicacion.longitud.toFixed(5)}</p>
-                  </div>
-                  <p className="text-neutral-500 text-xs italic">Selecciona destino en el mapa</p>
-                </div>
+                <p className="text-neutral-500 text-xs italic">Selecciona destino en el mapa</p>
               )}
             </div>
           </div>
         )}
 
-        {/* Panel Derecho: Listado de pasos con boton minimizar */}
-        {indicaciones.length > 0 && (
+        {/* Panel Derecho: Listado minimizable */}
+        {estadoNavegacion === 'navegando' && indicaciones.length > 0 && (
           <div className={`absolute top-4 right-4 z-50 bg-neutral-800/95 backdrop-blur-md rounded-xl border border-neutral-700 shadow-2xl text-white flex flex-col transition-all duration-300 overflow-hidden ${
             panelMinimizado ? 'w-10 h-10' : 'w-[280px] max-h-[60vh]'
           }`}>
             <button 
               onClick={() => setPanelMinimizado(!panelMinimizado)} 
               className="w-full h-10 flex items-center justify-center bg-neutral-700/50 hover:bg-neutral-700 transition-colors shrink-0"
-              title={panelMinimizado ? 'Mostrar lista' : 'Ocultar lista'}
             >
               {panelMinimizado ? <FiChevronUp className="text-lg" /> : <FiChevronDown className="text-lg" />}
             </button>
@@ -517,11 +611,29 @@ export default function MapaNavegacionLogistica() {
           </div>
         )}
 
-        {/* BOTON CENTRAR (Aparece solo si el usuario arrastro el mapa) */}
+        {/* BOTON FLOTANTE "IR?" CON CUENTA REGRESIVA */}
+        {estadoNavegacion === 'cuenta_regresiva' && (
+          <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-2">
+            <button 
+              onClick={iniciarNavegacionReal}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-full shadow-2xl text-lg transition-all animate-pulse"
+            >
+              Ir? ({segundosRestantes})
+            </button>
+            <button 
+              onClick={cancelarViaje}
+              className="bg-neutral-800/80 hover:bg-neutral-700 text-neutral-300 text-xs font-semibold py-2 px-4 rounded-lg transition-colors border border-neutral-600"
+            >
+              Cancelar
+            </button>
+          </div>
+        )}
+
+        {/* BOTON CENTRAR */}
         {mapaDescentrado && (
           <button 
             onClick={centrarCamara}
-            className="absolute bottom-24 left-1/2 -translate-x-1/2 z-50 bg-neutral-800/95 hover:bg-blue-600 text-white p-4 rounded-full shadow-xl border border-neutral-700 transition-all"
+            className={`absolute bottom-24 left-1/2 -translate-x-1/2 z-50 bg-neutral-800/95 hover:bg-blue-600 text-white p-4 rounded-full shadow-xl border border-neutral-700 transition-all ${estadoNavegacion === 'cuenta_regresiva' ? 'hidden' : ''}`}
             title="Centrar en mi ubicacion"
           >
             <FiCrosshair className="text-2xl" />
@@ -532,14 +644,6 @@ export default function MapaNavegacionLogistica() {
         <button onClick={cerrarMapa} className="absolute bottom-6 right-6 z-50 bg-neutral-800/95 hover:bg-neutral-700 text-white font-semibold py-3 px-5 rounded-lg shadow-xl border border-neutral-700 transition-colors">
           Cerrar Mapa
         </button>
-
-        <div className="absolute bottom-6 left-6 z-50">
-          <div className={`px-3 py-1.5 rounded-full text-[10px] font-mono border ${
-            estadoMapa === 'listo' ? 'bg-green-500/20 text-green-400 border-green-500/30' : 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
-          }`}>
-            Mapa: {estadoMapa}
-          </div>
-        </div>
       </div>
     </div>
   );
