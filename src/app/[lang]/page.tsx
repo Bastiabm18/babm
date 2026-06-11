@@ -41,9 +41,13 @@ export default function Home() {
       <section className='flex items-center justify-center w-[95vw] '>
       <CodeSimulator/>
       </section>
+     {
+/*
       <section className="flex items-center justify-center w-[95vw] h-auto">
       <MapaBuscarRuta/>
       </section>
+*/
+     }
       <section className='flex flex-row items-center justify-center w-[95vw] gap-4 lg:gap-8 xl:gap-12'>
             <LogoBabm />
           <ContenedorStreaming 
