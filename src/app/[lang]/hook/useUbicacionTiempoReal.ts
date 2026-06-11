@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 interface Coordenadas {
   latitud: number;
   longitud: number;
-  heading: number | null; // Rumbo/dirección del dispositivo en grados
+  heading: number | null;
 }
 
 export function useUbicacionTiempoReal() {
@@ -19,64 +19,50 @@ export function useUbicacionTiempoReal() {
       return;
     }
 
-    // Función para activar el rastreo activo
-    const iniciarRastreo = () => {
-      const opcionesGps = {
-        enableHighAccuracy: true, // Forzar uso de GPS de alta precisión, no solo antenas de red
-        timeout: 15000,
-        maximumAge: 0 // Evitar datos cacheados obsoletos
-      };
-
-      geoWatchIdRef.current = navigator.geolocation.watchPosition(
-        (posicion) => {
-          const nuevasCoords: Coordenadas = {
-            latitud: posicion.coords.latitude,
-            longitud: posicion.coords.longitude,
-            heading: posicion.coords.heading // Útil para rotar la cámara de Mapbox hacia donde mira el auto
-          };
-          
-          setUbicacion(nuevasCoords);
-          setError(null);
-
-          // Sincronizar con almacenamiento local para persistencia rápida
-          localStorage.setItem('ultimaUbicacionGPS', JSON.stringify(nuevasCoords));
-          
-          // Emitir un evento global para que Mapbox lo cachee instantáneamente
-          window.dispatchEvent(new CustomEvent('gps-update', { detail: nuevasCoords }));
-        },
-        (err) => {
-          console.error('⚠️ Error en watchPosition:', err);
-          switch (err.code) {
-            case 1: setError('Permiso de ubicación denegado.'); break;
-            case 2: setError('Posición no disponible (GPS apagado).'); break;
-            case 3: setError('Tiempo de espera agotado.'); break;
-          }
-        },
-        opcionesGps
-      );
+    // Se lanza directo. Si iOS necesita pedir permiso, mostrará el popup.
+    // Si el usuario acepta, el callback de éxito se dispara inmediatamente.
+    const opcionesGps = {
+      enableHighAccuracy: true, 
+      timeout: 20000, // 20 segundos para el GPS de hardware de iOS
+      maximumAge: 0 
     };
 
-    // Si ya tenemos el permiso otorgado previamente en localStorage, iniciamos directo
-    const permisoPrevio = localStorage.getItem('permisoUbicacion');
-    if (permisoPrevio === 'otorgado') {
-      iniciarRastreo();
-    }
-
-    // Escuchar si el usuario acepta el modal de permisos en tiempo de ejecución
-    const manejarPermisoOtorgado = () => {
-      if (!geoWatchIdRef.current) iniciarRastreo();
-    };
-
-    window.addEventListener('permiso-ubicacion-otorgado', manejarPermisoOtorgado);
+    geoWatchIdRef.current = navigator.geolocation.watchPosition(
+      (posicion) => {
+        const nuevasCoords: Coordenadas = {
+          latitud: posicion.coords.latitude,
+          longitud: posicion.coords.longitude,
+          heading: posicion.coords.heading
+        };
+        
+        setUbicacion(nuevasCoords);
+        setError(null); // Limpia errores previos si recuperó señal
+      },
+      (err) => {
+        console.error('Error en watchPosition:', err);
+        switch (err.code) {
+          case 1: 
+            setError('Permiso de ubicación denegado. Habilítalo en Ajustes de iPhone > Chrome.'); 
+            break;
+          case 2: 
+            setError('Posición no disponible (GPS apagado o sin señal).'); 
+            break;
+          case 3: 
+            setError('Tiempo de espera agotado al buscar señal GPS.'); 
+            break;
+          default:
+            setError('Error desconocido de geolocalización.');
+        }
+      },
+      opcionesGps
+    );
 
     return () => {
-      // Limpieza crítica: Apagar el hardware de GPS al desmontar el componente para no gastar batería
       if (geoWatchIdRef.current !== null) {
         navigator.geolocation.clearWatch(geoWatchIdRef.current);
       }
-      window.removeEventListener('permiso-ubicacion-otorgado', manejarPermisoOtorgado);
     };
-  }, []);
+  }, []); // Array vacío. Se ejecuta una vez al montar.
 
   return { ubicacion, error };
 }
