@@ -22,6 +22,10 @@ import {
   guardarRespuestaEspectador, 
   enviarMensaje
 } from '../components/actions/actions';
+import SeguirRutaMapa from '../components/SeguirRutaMapa';
+import PermisoUbicacion from '../components/PermisoUbicacion';
+import MapaNavegacionLogistica from '../components/MapaNavegacionLogistica';
+
 
 
 export default function Home() {
@@ -29,6 +33,7 @@ export default function Home() {
   const { t } = useTranslation();
   return (
     <div className="min-h-screen flex flex-col gap-20 mb-10 items-center justify-center  bg-background-light dark:bg-background-dark">
+     <PermisoUbicacion />
       <section className='flex items-center justify-center w-[95vw] '>
       <ImageSlider />
 
@@ -52,6 +57,13 @@ export default function Home() {
             accionEnviarMensaje={enviarMensaje}
           />
         <LogoBabm />
+      </section>
+      <section>
+        <MapaNavegacionLogistica/>
+      </section>
+      <section className='flex items-center justify-center w-[95vw]'>
+      <SeguirRutaMapa />
+      
       </section>
       <section id="proyectos" className='flex items-center justify-center w-[95vw]'>
         <ProjectsGrid />

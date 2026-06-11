@@ -8,7 +8,7 @@ import NeonSign from './NeonSign';
 
 // Textos
 const sponsorsTexts = {
-  en: { title: 'We proudly support' },
+  en: { title: 'Proudly support' },
   es: { title: 'Auspiciador Oficial en ' },
   de: { title: 'Wir unterstützen' },
   zh: { title: '我们支持' },
@@ -16,8 +16,9 @@ const sponsorsTexts = {
 
 // Array de logos
 const logos = [
-  { src: '/catiray.png', alt: 'Catiray', url: 'https://catiray.vercel.app/', name: 'FC Catiray' },
+  { src: '/humobile.PNG', alt: 'Humobile', url: 'https://humobile.cl/', name: 'Humobile' },
   { src: '/carrera.png', alt: 'Carrera', url: '#', name: 'Union Los Carrera' },
+  { src: '/catiray.png', alt: 'Catiray', url: 'https://catiray.vercel.app/', name: 'FC Catiray' },
   { src: '/spaolimpo.ico', alt: 'Olimpo Spa', url: 'https://spaolimpo.vercel.app/', name: 'Spa Olimpo' },
 ];
 
