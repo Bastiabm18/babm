@@ -97,7 +97,7 @@ export default function MapaNavegacionLogistica() {
         style: 'mapbox://styles/mapbox/navigation-night-v1',
         center: DEFAULT_CENTER,
         zoom: 16,
-        pitch: 0, // INICIO PLANO
+        pitch: 0, // CAMBIO 1: Nace plano
         bearing: 0,
         antialias: true
       });
@@ -146,10 +146,10 @@ export default function MapaNavegacionLogistica() {
       });
 
       mapa.on('click', (e) => {
-        if (estadoNavegacion === 'navegando') return; // No cambiar destino mientras navegas
         setDestino([e.lngLat.lng, e.lngLat.lat]);
         setEstadoNavegacion('cuenta_regresiva');
         setSegundosRestantes(5);
+        setMapaDescentrado(true); // CAMBIO 2: Bloquear camara al elegir destino
       });
 
     } catch (err) {
@@ -163,7 +163,7 @@ export default function MapaNavegacionLogistica() {
       marcadorUsuarioRef.current = null;
       marcadorDestinoRef.current = null;
     };
-  }, [vistaActiva, estaMontado, estadoNavegacion]);
+  }, [vistaActiva, estaMontado]); // DEPENDENCIAS SIN TOCAR
 
   useEffect(() => {
     if (estadoNavegacion !== 'cuenta_regresiva') {
@@ -220,8 +220,9 @@ export default function MapaNavegacionLogistica() {
       if (ultimoHeadingValidoRef.current !== null && headingActual !== null) {
         let diff = Math.abs(headingActual - ultimoHeadingValidoRef.current);
         if (diff > 180) diff = 360 - diff;
+        
         if (diff > 90 && metrosMovidos < 20) {
-          headingActual = ultimoHeadingValidoRef.current;
+          headingActual = ultimoHeadingValidoRef.current; 
         }
       }
     }
@@ -246,21 +247,19 @@ export default function MapaNavegacionLogistica() {
 
     if (!mapaDescentrado) {
       if (estadoNavegacion === 'navegando') {
-        // VISTA 3D TRASERA CON ZOOM CERCANO
         const centroCamara = calcularCentroCamaraAtras(nuevaPos[1], nuevaPos[0], headingActual);
         mapRef.current.easeTo({
           center: centroCamara,
           bearing: headingActual ?? 0,
           pitch: 70,
-          zoom: 17, // MAS CERCANO
+          zoom: 17, // CAMBIO 3: Zoom cercano en navegacion
           duration: 1000
         });
       } else {
-        // VISTA PLANA NORMAL
         mapRef.current.easeTo({
           center: nuevaPos,
           bearing: headingActual ?? 0,
-          pitch: 0, // PLANO
+          pitch: 0, // CAMBIO 4: Mantener plano si no navega
           zoom: 16,
           duration: 1000
         });
@@ -309,19 +308,18 @@ export default function MapaNavegacionLogistica() {
 
   const iniciarNavegacionReal = () => {
     setEstadoNavegacion('navegando');
-    setMapaDescentrado(false);
+    setMapaDescentrado(false); 
     
     if (ubicacion && destino) {
       trazarRutaLogistica([ubicacion.longitud, ubicacion.latitud], destino);
       
-      // TRANSICION: De plano a 3D acercado
       const centroCamara = calcularCentroCamaraAtras(ubicacion.latitud, ubicacion.longitud, ubicacion.heading);
-      mapRef.current?.flyTo({
+      mapRef.current?.flyTo({ // CAMBIO 5: Transicion suave al inicio
         center: centroCamara,
         bearing: ubicacion.heading ?? 0,
-        pitch: 70, // INCLINAR
-        zoom: 17,  // ACERCAR
-        duration: 1500 // TRANSICION GRADUAL MAS LENTA PARA EL EFECTO
+        pitch: 70, // CAMBIO 6: Inclinar aca
+        zoom: 17,  // CAMBIO 7: Acercar aca
+        duration: 1500
       });
     }
   };
@@ -389,7 +387,7 @@ export default function MapaNavegacionLogistica() {
       mapRef.current.easeTo({
         center: [ubicacion.longitud, ubicacion.latitud],
         bearing: ubicacion.heading ?? 0,
-        pitch: 0,
+        pitch: 0, // CAMBIO 8: Plano al centrar sin ruta
         zoom: 16,
         duration: 800
       });
@@ -421,8 +419,7 @@ export default function MapaNavegacionLogistica() {
     prevLocationRef.current = null;
     distanciaAcumuladaPasosRef.current = [];
     
-    // VOLVER A PLANO AL CANCELAR
-    mapRef.current?.easeTo({ pitch: 0, zoom: 16, duration: 1000 });
+    centrarCamara();
   };
 
   const cerrarMapa = useCallback(() => {
@@ -466,6 +463,7 @@ export default function MapaNavegacionLogistica() {
           <button onClick={() => setVistaActiva('mapa')} className="w-full bg-blue-600 hover:bg-blue-700 transition-colors text-white font-semibold py-3 px-6 rounded-lg shadow-lg">
             Iniciar Navegacion
           </button>
+          <p className="text-neutral-600 text-xs mt-4">Se requerira acceso a tu ubicacion precisa.</p>
         </div>
       </div>
     );
@@ -610,10 +608,10 @@ export default function MapaNavegacionLogistica() {
           </div>
         )}
 
-        {mapaDescentrado && estadoNavegacion !== 'cuenta_regresiva' && (
+        {mapaDescentrado && (
           <button 
             onClick={centrarCamara}
-            className="absolute bottom-24 left-1/2 -translate-x-1/2 z-50 bg-neutral-800/95 hover:bg-blue-600 text-white p-4 rounded-full shadow-xl border border-neutral-700 transition-all"
+            className={`absolute bottom-24 left-1/2 -translate-x-1/2 z-50 bg-neutral-800/95 hover:bg-blue-600 text-white p-4 rounded-full shadow-xl border border-neutral-700 transition-all ${estadoNavegacion === 'cuenta_regresiva' ? 'hidden' : ''}`}
             title="Centrar en mi ubicacion"
           >
             <FiCrosshair className="text-2xl" />
