@@ -97,7 +97,7 @@ export default function MapaNavegacionLogistica() {
         style: 'mapbox://styles/mapbox/navigation-night-v1',
         center: DEFAULT_CENTER,
         zoom: 16,
-        pitch: 0, // CAMBIO 1: Nace plano
+        pitch: 0,
         bearing: 0,
         antialias: true
       });
@@ -149,7 +149,7 @@ export default function MapaNavegacionLogistica() {
         setDestino([e.lngLat.lng, e.lngLat.lat]);
         setEstadoNavegacion('cuenta_regresiva');
         setSegundosRestantes(5);
-        setMapaDescentrado(true); // CAMBIO 2: Bloquear camara al elegir destino
+        setMapaDescentrado(true); 
       });
 
     } catch (err) {
@@ -163,7 +163,7 @@ export default function MapaNavegacionLogistica() {
       marcadorUsuarioRef.current = null;
       marcadorDestinoRef.current = null;
     };
-  }, [vistaActiva, estaMontado]); // DEPENDENCIAS SIN TOCAR
+  }, [vistaActiva, estaMontado]);
 
   useEffect(() => {
     if (estadoNavegacion !== 'cuenta_regresiva') {
@@ -252,14 +252,14 @@ export default function MapaNavegacionLogistica() {
           center: centroCamara,
           bearing: headingActual ?? 0,
           pitch: 70,
-          zoom: 17, // CAMBIO 3: Zoom cercano en navegacion
+          zoom: 17,
           duration: 1000
         });
       } else {
         mapRef.current.easeTo({
           center: nuevaPos,
           bearing: headingActual ?? 0,
-          pitch: 0, // CAMBIO 4: Mantener plano si no navega
+          pitch: 0,
           zoom: 16,
           duration: 1000
         });
@@ -304,7 +304,15 @@ export default function MapaNavegacionLogistica() {
     } else {
       marcadorDestinoRef.current.setLngLat(destino);
     }
-  }, [destino]);
+
+    // RECALCULO DINAMICO: Si ya estamos navegando y tocamos otro destino, trazamos de nuevo
+    if (estadoNavegacion === 'navegando' && ubicacion) {
+      trazarRutaLogistica([ubicacion.longitud, ubicacion.latitud], destino);
+      distanciaRecorridaRef.current = 0;
+      prevLocationRef.current = null;
+      setPasoActualIdx(0);
+    }
+  }, [destino, estadoNavegacion, ubicacion]);
 
   const iniciarNavegacionReal = () => {
     setEstadoNavegacion('navegando');
@@ -314,11 +322,11 @@ export default function MapaNavegacionLogistica() {
       trazarRutaLogistica([ubicacion.longitud, ubicacion.latitud], destino);
       
       const centroCamara = calcularCentroCamaraAtras(ubicacion.latitud, ubicacion.longitud, ubicacion.heading);
-      mapRef.current?.flyTo({ // CAMBIO 5: Transicion suave al inicio
+      mapRef.current?.flyTo({
         center: centroCamara,
         bearing: ubicacion.heading ?? 0,
-        pitch: 70, // CAMBIO 6: Inclinar aca
-        zoom: 17,  // CAMBIO 7: Acercar aca
+        pitch: 70,
+        zoom: 17,
         duration: 1500
       });
     }
@@ -363,7 +371,7 @@ export default function MapaNavegacionLogistica() {
         mapa.addLayer({
           id: 'capaRuta', type: 'line', source: 'ruta',
           layout: { 'line-join': 'round', 'line-cap': 'round' },
-          paint: { 'line-color': '#38bdf8', 'line-width': 6, 'line-opacity': 0.9 }
+          paint: { 'line-color': '#ff5722', 'line-width': 6, 'line-opacity': 0.9 }
         });
       }
     } catch (err) {
@@ -387,7 +395,7 @@ export default function MapaNavegacionLogistica() {
       mapRef.current.easeTo({
         center: [ubicacion.longitud, ubicacion.latitud],
         bearing: ubicacion.heading ?? 0,
-        pitch: 0, // CAMBIO 8: Plano al centrar sin ruta
+        pitch: 0,
         zoom: 16,
         duration: 800
       });
