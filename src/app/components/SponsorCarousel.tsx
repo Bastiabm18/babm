@@ -16,7 +16,9 @@ const sponsorsTexts = {
 
 // Array de logos
 const logos = [
-  { src: '/humobile.PNG', alt: 'Humobile', url: 'https://humobile.cl/', name: 'Humobile' },
+  { src: '/gama_pastel.png', alt: 'Sucunati', url: 'https://coctelesysuculentas.vercel.app/', name: 'Happy Candy family' },
+  { src: '/humobile.png', alt: 'Humobile', url: 'https://humobile.cl/', name: 'Humobile' },
+  { src: '/flotababm.png', alt: 'Flota BABM', url: 'https://flota-virtual.vercel.app/miSeguimiento', name: 'Flota BABM' },
   { src: '/carrera.png', alt: 'Carrera', url: '#', name: 'Union Los Carrera' },
   { src: '/catiray.png', alt: 'Catiray', url: 'https://catiray.vercel.app/', name: 'FC Catiray' },
   { src: '/spaolimpo.ico', alt: 'Olimpo Spa', url: 'https://spaolimpo.vercel.app/', name: 'Spa Olimpo' },
